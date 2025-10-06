@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/AquaTracker.iml" filepath="$PROJECT_DIR$/AquaTracker.iml" />
+      <module fileurl="file://$PROJECT_DIR$/AquaTracker-backend.iml" filepath="$PROJECT_DIR$/AquaTracker-backend.iml" />
     </modules>
   </component>
 </project>
