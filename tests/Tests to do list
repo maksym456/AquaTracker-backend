@@ -1,0 +1,14 @@
+List of test to implement
+
+Unit tests/Integrate into "CI/CD pipelines" (Continuous Integration/Continuous Deployment)—automated workflows
+- Static tests
+
+Integration tests
+- Runtime Verification
+
+End to end test
+- Simulated user interaction
+
+Additional
+- Codestyle helper implementation
+
