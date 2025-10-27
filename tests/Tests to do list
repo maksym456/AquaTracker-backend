@@ -12,3 +12,12 @@ End to end test
 Additional
 - Codestyle helper implementation
 
+sprawdzenie interakcji każdej rybki z każdą rybką
+
+sprawdzenie co się stanie jak się doda za dużo rybek
+
+sprawdzenie co się stanie jak jest za dużo roślin
+
+test czy działa tworzenie rybki
+
+test czy działa usunięcie rybki
