@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot generator="Robot 7.3.2 (Python 3.14.0 on win32)" generated="2025-10-27T19:35:38.838182" rpa="false" schemaversion="5">
+<suite id="s1" name="Basic Ph Test" source="e:\Backennd\AquaTracker-backend\tests\basic_ph_test.robot">
+<test id="s1-t1" name="Verify Safe pH Level" line="7">
+<kw name="Evaluate Safe pH">
+<kw name="Run Keyword If" owner="BuiltIn">
+<kw name="Set Variable" owner="BuiltIn">
+<arg>${True}</arg>
+<doc>Returns the given values which can then be assigned to a variables.</doc>
+<status status="PASS" start="2025-10-27T19:35:38.896387" elapsed="0.000365"/>
+</kw>
+<msg time="2025-10-27T19:35:38.897067" level="INFO">${is_safe} = True</msg>
+<var>${is_safe}</var>
+<arg>${ph} &gt;= 6.5 and ${ph} &lt;= 7.5</arg>
+<arg>Set Variable</arg>
+<arg>${True}</arg>
+<arg>ELSE</arg>
+<arg>Set Variable</arg>
+<arg>${False}</arg>
+<doc>Runs the given keyword with the given arguments, if ``condition`` is true.</doc>
+<status status="PASS" start="2025-10-27T19:35:38.895532" elapsed="0.007920"/>
+</kw>
+<return>
+<value>${is_safe}</value>
+<status status="PASS" start="2025-10-27T19:35:38.903795" elapsed="0.000280"/>
+</return>
+<msg time="2025-10-27T19:35:38.904474" level="INFO">${result} = True</msg>
+<var>${result}</var>
+<arg>${TEST_PH}</arg>
+<status status="PASS" start="2025-10-27T19:35:38.893454" elapsed="0.011222"/>
+</kw>
+<kw name="Should Be True" owner="BuiltIn">
+<arg>${result}</arg>
+<arg>msg=The pH ${TEST_PH} should be safe!</arg>
+<doc>Fails if the given condition is not true.</doc>
+<status status="PASS" start="2025-10-27T19:35:38.905233" elapsed="0.000652"/>
+</kw>
+<status status="PASS" start="2025-10-27T19:35:38.892357" elapsed="0.018401"/>
+</test>
+<status status="PASS" start="2025-10-27T19:35:38.847908" elapsed="0.065129"/>
+</suite>
+<statistics>
+<total>
+<stat pass="1" fail="0" skip="0">All Tests</stat>
+</total>
+<tag>
+</tag>
+<suite>
+<stat name="Basic Ph Test" id="s1" pass="1" fail="0" skip="0">Basic Ph Test</stat>
+</suite>
+</statistics>
+<errors>
+<msg time="2025-10-27T19:35:38.802163" level="WARN">Error in file 'e:\Backennd\AquaTracker-backend\tests\basic_ph_test.robot' on line 15: The '[Return]' setting is deprecated. Use the 'RETURN' statement instead.</msg>
+</errors>
+</robot>
