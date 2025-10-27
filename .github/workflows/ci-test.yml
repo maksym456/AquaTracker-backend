@@ -1,0 +1,30 @@
+name: CI Tests
+
+on:                     
+  push:                 
+    branches: [ main ]  
+
+jobs:                       
+  test:                         
+    runs-on: ubuntu-latest  
+    steps:  
+      - name: Checkout code  
+        uses: actions/checkout@v4  
+
+      - name: Set up Python  
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'  
+
+      - name: Install Robot Framework  
+        run: pip install robotframework  
+
+      - name: Run Tests  
+        run: robot tests/basic_ph_test.robot  
+
+      - name: Upload Test Results 
+        if: always()  # Even if tests fail.
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: log.html  
