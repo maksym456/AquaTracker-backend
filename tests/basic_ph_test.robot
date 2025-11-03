@@ -12,4 +12,5 @@ Verify Safe pH Level
 Evaluate Safe pH
     [Arguments]    ${ph}
     ${is_safe}=    Run Keyword If    ${ph} >= 6.5 and ${ph} <= 7.5    Set Variable    ${True}    ELSE    Set Variable    ${False}
-    [Return]    ${is_safe}
+    [RETURN]    ${is_safe}
+

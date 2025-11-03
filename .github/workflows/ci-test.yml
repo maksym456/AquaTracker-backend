@@ -2,7 +2,7 @@ name: CI Tests
 
 on:                     
   push:                 
-    branches: [ main ]  
+    branches: [ master ]  
 
 jobs:                       
   test:                         
@@ -23,7 +23,7 @@ jobs:
         run: robot tests/basic_ph_test.robot  
 
       - name: Upload Test Results 
-        if: always()  # Even if tests fail.
+        if: always()  
         uses: actions/upload-artifact@v4
         with:
           name: test-results
