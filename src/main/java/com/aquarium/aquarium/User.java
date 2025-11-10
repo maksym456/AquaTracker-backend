@@ -20,6 +20,8 @@ public class User {
 
     private String password;
 
+    private java.time.LocalDateTime createdAt; // <-- Nowe pole
+
     public Long getId() {
         return id;
     }
@@ -50,5 +52,14 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    // Nowe gettery i settery
+    public java.time.LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(java.time.LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }
