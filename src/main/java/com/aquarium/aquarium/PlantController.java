@@ -7,13 +7,14 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/fishes")
-public class FishController {
+@RequestMapping("/api/plants")
+public class PlantController {
 
     @GetMapping
-    public List<FishDto> getAllFishes() {
+    public List<PlantDto> getAllPlants() {
         return List.of(
-                new FishDto("1", "Gupik", "Poecilia reticulata", "1")
+                new PlantDto("1", "Anubias", "1"),
+                new PlantDto("2", "Moczarka", "2")
         );
     }
 }
