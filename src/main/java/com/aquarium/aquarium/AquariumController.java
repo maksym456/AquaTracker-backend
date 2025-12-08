@@ -77,7 +77,9 @@ public class AquariumController {
             aquarium.setDescription(request.getDescription() != null ? request.getDescription() : "");
             aquarium.setVolumeLiters(request.getVolume() != null ? request.getVolume() : 200);
             aquarium.setCreatedAt(LocalDateTime.now());
+            // Ustawiamy domyślnego użytkownika, jeśli baza wymaga user_id
             aquarium.setOwner(getOrCreateDefaultUser());
+            // Kolekcje są już zainicjalizowane w klasie Aquarium
 
             aquarium = aquariumRepository.save(aquarium);
             
@@ -151,8 +153,11 @@ public class AquariumController {
     }
 
     @PostMapping("/{id}/fishes")
+    @Transactional
     public ResponseEntity<?> addFishToAquarium(@PathVariable Long id, @RequestBody AddFishRequest request) {
         try {
+            System.out.println("Adding fish to aquarium. Aquarium ID: " + id + ", Fish ID: " + request.getFishId() + ", Count: " + request.getCount());
+            
             Aquarium aquarium = aquariumRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Aquarium not found"));
             
@@ -165,12 +170,21 @@ public class AquariumController {
             aquariumFish.setFishCount(request.getCount() != null ? request.getCount() : 1);
 
             aquariumFish = aquariumFishRepository.save(aquariumFish);
+            System.out.println("AquariumFish saved with ID: " + aquariumFish.getId());
+            
             aquarium = aquariumRepository.findById(id).orElse(aquarium);
+            System.out.println("Creating AquariumResponseDto for aquarium ID: " + aquarium.getId());
 
-            return ResponseEntity.ok(new AquariumResponseDto(aquarium));
+            AquariumResponseDto response = new AquariumResponseDto(aquarium);
+            System.out.println("Response created successfully. Fishes count: " + (response.getFishes() != null ? response.getFishes().size() : 0));
+
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("Error in addFishToAquarium: " + e.getClass().getSimpleName() + " - " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to add fish: " + e.getMessage()));
+                    .body(Map.of("error", "Failed to add fish: " + e.getMessage(), 
+                                 "details", e.getClass().getSimpleName()));
         }
     }
 

@@ -27,6 +27,7 @@ public class AquariumResponseDto {
         this.hardness = aquarium.getHardness();
         this.description = aquarium.getDescription();
         
+        // Konwersja ryb i roślin na listy ID - bezpieczna obsługa null
         try {
             this.fishes = aquarium.getFishInAquarium() != null && !aquarium.getFishInAquarium().isEmpty()
                 ? aquarium.getFishInAquarium().stream()
