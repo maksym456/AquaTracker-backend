@@ -17,10 +17,14 @@ public class Aquarium {
     private int volumeLiters;
     private double temperatureC;
     private String waterType;
+    private String biotope;
+    private Double ph;
+    private Integer hardness;
+    private String description;
     private LocalDateTime createdAt;
 
     @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id", nullable = true)
     private User owner;
 
     @ManyToMany
@@ -29,10 +33,10 @@ public class Aquarium {
             joinColumns = @JoinColumn(name = "aquarium_id"),
             inverseJoinColumns = @JoinColumn(name = "plant_id")
     )
-    private Set<Plant> plants;
+    private Set<Plant> plants = new java.util.HashSet<>();
 
     @OneToMany(mappedBy = "aquarium", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<AquariumFish> fishInAquarium;
+    private List<AquariumFish> fishInAquarium = new java.util.ArrayList<>();
 
     public Long getId() {
         return id;
@@ -104,5 +108,37 @@ public class Aquarium {
 
     public void setFishInAquarium(List<AquariumFish> fishInAquarium) {
         this.fishInAquarium = fishInAquarium;
+    }
+
+    public String getBiotope() {
+        return biotope;
+    }
+
+    public void setBiotope(String biotope) {
+        this.biotope = biotope;
+    }
+
+    public Double getPh() {
+        return ph;
+    }
+
+    public void setPh(Double ph) {
+        this.ph = ph;
+    }
+
+    public Integer getHardness() {
+        return hardness;
+    }
+
+    public void setHardness(Integer hardness) {
+        this.hardness = hardness;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

@@ -13,28 +13,23 @@ public class FishSpecies {
     private String name;
     private String waterType;
     private String biotype;
-
-
     private int tempMinC;
     private int tempMaxC;
-
-
     private double phMin;
     private double phMax;
-
     private int ghMin;
     private int ghMax;
-
     private String temperament;
     private int minSchoolSize;
     private String lifespan;
-
+    private String description;
+    private String image;
 
     public FishSpecies() {}
 
     public FishSpecies(String name, String waterType, int tempMinC, int tempMaxC, String biotype,
                        double phMin, double phMax, int ghMin, int ghMax,
-                       String temperament, int minSchoolSize, String lifespan) {
+                       String temperament, int minSchoolSize, String lifespan, String description, String image) {
         this.name = name;
         this.waterType = waterType;
         this.tempMinC = tempMinC;
@@ -47,6 +42,8 @@ public class FishSpecies {
         this.temperament = temperament;
         this.minSchoolSize = minSchoolSize;
         this.lifespan = lifespan;
+        this.description = description;
+        this.image = image;
     }
 
     public Long getId() {
@@ -151,5 +148,21 @@ public class FishSpecies {
 
     public void setLifespan(String lifespan) {
         this.lifespan = lifespan;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getImage() {
+        return image;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
     }
 }
