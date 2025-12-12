@@ -3,43 +3,39 @@ package com.aquarium.aquarium;
 import java.util.List;
 
 public class FishResponseDto {
-    private Long id;
+    private String id;
     private String name;
-    private String description;
-    private String image;
     private String waterType;
-    private List<Integer> tempRange;
+    private String temperature;
     private String biotope;
-    private List<Double> phRange;
-    private List<Integer> hardness;
+    private String ph;
+    private String hardnessDGH;
     private String temperament;
-    private Integer minSchoolSize;
-    private String lifespan;
+    private Integer minShoalSize;
+    private String lifeSpan;
+    private String iconName;
 
     public FishResponseDto() {}
 
     public FishResponseDto(FishSpecies fish) {
-        this.id = fish.getId();
+        this.id = IdMapper.toFishId(fish.getId());
         this.name = fish.getName();
-        this.description = fish.getDescription();
-        this.image = fish.getImage();
-        this.waterType = fish.getWaterType() != null && fish.getWaterType().equals("Słonowodna") 
-            ? "saltwater" 
-            : "freshwater";
-        this.tempRange = List.of(fish.getTempMinC(), fish.getTempMaxC());
+        this.waterType = fish.getWaterType();
+        this.temperature = fish.getTemperature();
         this.biotope = fish.getBiotype();
-        this.phRange = List.of(fish.getPhMin(), fish.getPhMax());
-        this.hardness = List.of(fish.getGhMin(), fish.getGhMax());
+        this.ph = fish.getPh();
+        this.hardnessDGH = fish.getHardnessDGH();
         this.temperament = fish.getTemperament();
-        this.minSchoolSize = fish.getMinSchoolSize();
-        this.lifespan = fish.getLifespan();
+        this.minShoalSize = fish.getMinShoalSize();
+        this.lifeSpan = fish.getLifeSpan();
+        this.iconName = fish.getIconName();
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -51,22 +47,6 @@ public class FishResponseDto {
         this.name = name;
     }
 
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getImage() {
-        return image;
-    }
-
-    public void setImage(String image) {
-        this.image = image;
-    }
-
     public String getWaterType() {
         return waterType;
     }
@@ -75,12 +55,12 @@ public class FishResponseDto {
         this.waterType = waterType;
     }
 
-    public List<Integer> getTempRange() {
-        return tempRange;
+    public String getTemperature() {
+        return temperature;
     }
 
-    public void setTempRange(List<Integer> tempRange) {
-        this.tempRange = tempRange;
+    public void setTemperature(String temperature) {
+        this.temperature = temperature;
     }
 
     public String getBiotope() {
@@ -91,20 +71,20 @@ public class FishResponseDto {
         this.biotope = biotope;
     }
 
-    public List<Double> getPhRange() {
-        return phRange;
+    public String getPh() {
+        return ph;
     }
 
-    public void setPhRange(List<Double> phRange) {
-        this.phRange = phRange;
+    public void setPh(String ph) {
+        this.ph = ph;
     }
 
-    public List<Integer> getHardness() {
-        return hardness;
+    public String getHardnessDGH() {
+        return hardnessDGH;
     }
 
-    public void setHardness(List<Integer> hardness) {
-        this.hardness = hardness;
+    public void setHardnessDGH(String hardnessDGH) {
+        this.hardnessDGH = hardnessDGH;
     }
 
     public String getTemperament() {
@@ -115,20 +95,28 @@ public class FishResponseDto {
         this.temperament = temperament;
     }
 
-    public Integer getMinSchoolSize() {
-        return minSchoolSize;
+    public Integer getMinShoalSize() {
+        return minShoalSize;
     }
 
-    public void setMinSchoolSize(Integer minSchoolSize) {
-        this.minSchoolSize = minSchoolSize;
+    public void setMinShoalSize(Integer minShoalSize) {
+        this.minShoalSize = minShoalSize;
     }
 
-    public String getLifespan() {
-        return lifespan;
+    public String getLifeSpan() {
+        return lifeSpan;
     }
 
-    public void setLifespan(String lifespan) {
-        this.lifespan = lifespan;
+    public void setLifeSpan(String lifeSpan) {
+        this.lifeSpan = lifeSpan;
+    }
+
+    public String getIconName() {
+        return iconName;
+    }
+
+    public void setIconName(String iconName) {
+        this.iconName = iconName;
     }
 }
 

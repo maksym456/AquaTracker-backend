@@ -1,23 +1,31 @@
 package com.aquarium.aquarium;
 
 public class PlantResponseDto {
-    private Long id;
+    private String id;
     private String name;
-    private String species;
+    private String temperature;
+    private String biotope;
+    private String ph;
+    private String hardnessDGH;
+    private String iconName;
 
     public PlantResponseDto() {}
 
     public PlantResponseDto(Plant plant) {
-        this.id = plant.getId();
+        this.id = IdMapper.toPlantId(plant.getId());
         this.name = plant.getName();
-        this.species = plant.getSpecies();
+        this.temperature = plant.getTemperature();
+        this.biotope = plant.getBiotope();
+        this.ph = plant.getPh();
+        this.hardnessDGH = plant.getHardnessDGH();
+        this.iconName = plant.getIconName();
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -29,12 +37,44 @@ public class PlantResponseDto {
         this.name = name;
     }
 
-    public String getSpecies() {
-        return species;
+    public String getTemperature() {
+        return temperature;
     }
 
-    public void setSpecies(String species) {
-        this.species = species;
+    public void setTemperature(String temperature) {
+        this.temperature = temperature;
+    }
+
+    public String getBiotope() {
+        return biotope;
+    }
+
+    public void setBiotope(String biotope) {
+        this.biotope = biotope;
+    }
+
+    public String getPh() {
+        return ph;
+    }
+
+    public void setPh(String ph) {
+        this.ph = ph;
+    }
+
+    public String getHardnessDGH() {
+        return hardnessDGH;
+    }
+
+    public void setHardnessDGH(String hardnessDGH) {
+        this.hardnessDGH = hardnessDGH;
+    }
+
+    public String getIconName() {
+        return iconName;
+    }
+
+    public void setIconName(String iconName) {
+        this.iconName = iconName;
     }
 }
 

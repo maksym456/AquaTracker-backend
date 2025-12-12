@@ -20,7 +20,12 @@ public class User {
 
     private String password;
 
-    private java.time.LocalDateTime createdAt; // <-- Nowe pole
+    private java.time.LocalDateTime createdAt;
+
+    private String settingsLanguage;
+    private String settingsTheme;
+    private Integer settingsSessionLengthMinutes;
+    private String settingsDataSource;
 
     public Long getId() {
         return id;
@@ -61,5 +66,37 @@ public class User {
 
     public void setCreatedAt(java.time.LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getSettingsLanguage() {
+        return settingsLanguage != null ? settingsLanguage : "pl";
+    }
+
+    public void setSettingsLanguage(String settingsLanguage) {
+        this.settingsLanguage = settingsLanguage;
+    }
+
+    public String getSettingsTheme() {
+        return settingsTheme != null ? settingsTheme : "light";
+    }
+
+    public void setSettingsTheme(String settingsTheme) {
+        this.settingsTheme = settingsTheme;
+    }
+
+    public Integer getSettingsSessionLengthMinutes() {
+        return settingsSessionLengthMinutes != null ? settingsSessionLengthMinutes : 60;
+    }
+
+    public void setSettingsSessionLengthMinutes(Integer settingsSessionLengthMinutes) {
+        this.settingsSessionLengthMinutes = settingsSessionLengthMinutes;
+    }
+
+    public String getSettingsDataSource() {
+        return settingsDataSource != null ? settingsDataSource : "production";
+    }
+
+    public void setSettingsDataSource(String settingsDataSource) {
+        this.settingsDataSource = settingsDataSource;
     }
 }

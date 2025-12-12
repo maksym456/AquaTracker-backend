@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/fishes")
+@RequestMapping("/api/v1/fish")
 public class FishController {
 
     private final FishSpeciesRepository fishRepository;
@@ -26,27 +26,38 @@ public class FishController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getFishById(@PathVariable Long id) {
-        return fishRepository.findById(id)
+    public ResponseEntity<?> getFishById(@PathVariable String id) {
+        Long fishId = IdMapper.fromFishId(id);
+        if (fishId == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid fish ID format"));
+        }
+        return fishRepository.findById(fishId)
                 .map(fish -> ResponseEntity.ok(new FishResponseDto(fish)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/search")
     public List<FishResponseDto> searchFishes(
+            @RequestParam(required = false) String q,
             @RequestParam(required = false) String waterType,
             @RequestParam(required = false) String temperament,
-            @RequestParam(required = false) String biotope) {
+            @RequestParam(required = false) String biotope,
+            @RequestParam(required = false) Integer tempMin,
+            @RequestParam(required = false) Integer tempMax,
+            @RequestParam(required = false) Integer limit,
+            @RequestParam(required = false) Integer offset) {
         
         List<FishSpecies> allFishes = fishRepository.findAll();
         
         return allFishes.stream()
                 .filter(fish -> {
+                    if (q != null && !q.isEmpty()) {
+                        if (fish.getName() == null || !fish.getName().toLowerCase().contains(q.toLowerCase())) {
+                            return false;
+                        }
+                    }
                     if (waterType != null && !waterType.isEmpty()) {
-                        String fishWaterType = fish.getWaterType() != null && fish.getWaterType().equals("Słonowodna") 
-                            ? "saltwater" 
-                            : "freshwater";
-                        if (!waterType.equals(fishWaterType)) {
+                        if (fish.getWaterType() == null || !fish.getWaterType().equals(waterType)) {
                             return false;
                         }
                     }
@@ -60,8 +71,16 @@ public class FishController {
                             return false;
                         }
                     }
+                    if (tempMin != null && fish.getTempMaxC() < tempMin) {
+                        return false;
+                    }
+                    if (tempMax != null && fish.getTempMinC() > tempMax) {
+                        return false;
+                    }
                     return true;
                 })
+                .skip(offset != null ? offset : 0)
+                .limit(limit != null ? limit : Integer.MAX_VALUE)
                 .map(FishResponseDto::new)
                 .collect(Collectors.toList());
     }
@@ -112,9 +131,13 @@ public class FishController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateFish(@PathVariable Long id, @RequestBody FishRequestDto request) {
+    public ResponseEntity<?> updateFish(@PathVariable String id, @RequestBody FishRequestDto request) {
         try {
-            return fishRepository.findById(id)
+            Long fishId = IdMapper.fromFishId(id);
+            if (fishId == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid fish ID format"));
+            }
+            return fishRepository.findById(fishId)
                     .map(fish -> {
                         if (request.getName() != null && !request.getName().trim().isEmpty()) {
                             fish.setName(request.getName());
@@ -171,10 +194,14 @@ public class FishController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteFish(@PathVariable Long id) {
+    public ResponseEntity<?> deleteFish(@PathVariable String id) {
         try {
-            if (fishRepository.existsById(id)) {
-                fishRepository.deleteById(id);
+            Long fishId = IdMapper.fromFishId(id);
+            if (fishId == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid fish ID format"));
+            }
+            if (fishRepository.existsById(fishId)) {
+                fishRepository.deleteById(fishId);
                 return ResponseEntity.ok(Map.of("message", "Fish deleted successfully"));
             } else {
                 return ResponseEntity.notFound().build();

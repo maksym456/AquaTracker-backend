@@ -1,63 +1,86 @@
 package com.aquarium.aquarium;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class AquariumResponseDto {
-    private Long id;
+    private String id;
+    private String ownerId;
     private String name;
-    private String waterType;
-    private Double temperature;
-    private String biotope;
-    private Double ph;
-    private Integer hardness;
     private String description;
-    private List<Long> fishes;
-    private List<Long> plants;
+    private Integer volumeLiters;
+    private String waterType;
+    private Double temperatureC;
+    private Double ph;
+    private Integer hardnessDGH;
+    private List<FishInAquariumDto> fish;
+    private List<PlantInAquariumDto> plants;
+    private AquariumStatusDto status;
+    private LocalDateTime createdAt;
 
     public AquariumResponseDto() {}
 
-    public AquariumResponseDto(Aquarium aquarium) {
-        this.id = aquarium.getId();
+    public AquariumResponseDto(Aquarium aquarium, AquariumValidationService validationService) {
+        this.id = IdMapper.toAquariumId(aquarium.getId());
+        this.ownerId = aquarium.getOwner() != null ? IdMapper.toUserId(aquarium.getOwner().getId()) : null;
         this.name = aquarium.getName();
-        this.waterType = aquarium.getWaterType();
-        this.temperature = aquarium.getTemperatureC();
-        this.biotope = aquarium.getBiotope();
-        this.ph = aquarium.getPh();
-        this.hardness = aquarium.getHardness();
         this.description = aquarium.getDescription();
+        this.volumeLiters = aquarium.getVolumeLiters();
+        this.waterType = aquarium.getWaterType();
+        this.temperatureC = aquarium.getTemperatureC();
+        this.ph = aquarium.getPh();
+        this.hardnessDGH = aquarium.getHardnessDGH();
+        this.createdAt = aquarium.getCreatedAt();
         
-        // Konwersja ryb i roślin na listy ID - bezpieczna obsługa null
         try {
-            this.fishes = aquarium.getFishInAquarium() != null && !aquarium.getFishInAquarium().isEmpty()
+            this.fish = aquarium.getFishInAquarium() != null && !aquarium.getFishInAquarium().isEmpty()
                 ? aquarium.getFishInAquarium().stream()
                     .filter(af -> af != null && af.getFishSpecies() != null)
-                    .map(af -> af.getFishSpecies().getId())
-                    .filter(id -> id != null)
+                    .map(af -> new FishInAquariumDto(IdMapper.toFishId(af.getFishSpecies().getId()), af.getFishCount()))
                     .collect(Collectors.toList())
                 : List.of();
         } catch (Exception e) {
-            this.fishes = List.of();
+            this.fish = List.of();
         }
             
         try {
-            this.plants = aquarium.getPlants() != null && !aquarium.getPlants().isEmpty()
-                ? aquarium.getPlants().stream()
-                    .filter(p -> p != null && p.getId() != null)
-                    .map(Plant::getId)
+            this.plants = aquarium.getPlantsInAquarium() != null && !aquarium.getPlantsInAquarium().isEmpty()
+                ? aquarium.getPlantsInAquarium().stream()
+                    .filter(ap -> ap != null && ap.getPlant() != null)
+                    .map(ap -> new PlantInAquariumDto(IdMapper.toPlantId(ap.getPlant().getId()), ap.getPlantCount()))
                     .collect(Collectors.toList())
                 : List.of();
         } catch (Exception e) {
             this.plants = List.of();
         }
+
+        if (validationService != null) {
+            this.status = validationService.validateAquarium(aquarium);
+        } else {
+            // Fallback - jeśli validationService nie jest dostępny, tworzymy pusty status
+            this.status = new AquariumStatusDto("OK", List.of(), LocalDateTime.now());
+        }
     }
 
-    public Long getId() {
+    public AquariumResponseDto(Aquarium aquarium) {
+        this(aquarium, null);
+    }
+
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
+    }
+
+    public String getOwnerId() {
+        return ownerId;
+    }
+
+    public void setOwnerId(String ownerId) {
+        this.ownerId = ownerId;
     }
 
     public String getName() {
@@ -68,6 +91,22 @@ public class AquariumResponseDto {
         this.name = name;
     }
 
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public Integer getVolumeLiters() {
+        return volumeLiters;
+    }
+
+    public void setVolumeLiters(Integer volumeLiters) {
+        this.volumeLiters = volumeLiters;
+    }
+
     public String getWaterType() {
         return waterType;
     }
@@ -76,20 +115,12 @@ public class AquariumResponseDto {
         this.waterType = waterType;
     }
 
-    public Double getTemperature() {
-        return temperature;
+    public Double getTemperatureC() {
+        return temperatureC;
     }
 
-    public void setTemperature(Double temperature) {
-        this.temperature = temperature;
-    }
-
-    public String getBiotope() {
-        return biotope;
-    }
-
-    public void setBiotope(String biotope) {
-        this.biotope = biotope;
+    public void setTemperatureC(Double temperatureC) {
+        this.temperatureC = temperatureC;
     }
 
     public Double getPh() {
@@ -100,36 +131,44 @@ public class AquariumResponseDto {
         this.ph = ph;
     }
 
-    public Integer getHardness() {
-        return hardness;
+    public Integer getHardnessDGH() {
+        return hardnessDGH;
     }
 
-    public void setHardness(Integer hardness) {
-        this.hardness = hardness;
+    public void setHardnessDGH(Integer hardnessDGH) {
+        this.hardnessDGH = hardnessDGH;
     }
 
-    public String getDescription() {
-        return description;
+    public List<FishInAquariumDto> getFish() {
+        return fish;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
+    public void setFish(List<FishInAquariumDto> fish) {
+        this.fish = fish;
     }
 
-    public List<Long> getFishes() {
-        return fishes;
-    }
-
-    public void setFishes(List<Long> fishes) {
-        this.fishes = fishes;
-    }
-
-    public List<Long> getPlants() {
+    public List<PlantInAquariumDto> getPlants() {
         return plants;
     }
 
-    public void setPlants(List<Long> plants) {
+    public void setPlants(List<PlantInAquariumDto> plants) {
         this.plants = plants;
+    }
+
+    public AquariumStatusDto getStatus() {
+        return status;
+    }
+
+    public void setStatus(AquariumStatusDto status) {
+        this.status = status;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }
 

@@ -24,6 +24,7 @@ public class FishSpecies {
     private String lifespan;
     private String description;
     private String image;
+    private String iconName;
 
     public FishSpecies() {}
 
@@ -44,6 +45,7 @@ public class FishSpecies {
         this.lifespan = lifespan;
         this.description = description;
         this.image = image;
+        this.iconName = image != null ? image.replace("/fish/", "") : null;
     }
 
     public Long getId() {
@@ -164,5 +166,41 @@ public class FishSpecies {
 
     public void setImage(String image) {
         this.image = image;
+    }
+
+    public String getIconName() {
+        return iconName != null ? iconName : (image != null ? image : "");
+    }
+
+    public void setIconName(String iconName) {
+        this.iconName = iconName;
+    }
+
+    public String getTemperature() {
+        return tempMinC + "-" + tempMaxC;
+    }
+
+    public String getPh() {
+        return phMin + "-" + phMax;
+    }
+
+    public String getHardnessDGH() {
+        return ghMin + "-" + ghMax;
+    }
+
+    public int getMinShoalSize() {
+        return minSchoolSize;
+    }
+
+    public void setMinShoalSize(int minShoalSize) {
+        this.minSchoolSize = minShoalSize;
+    }
+
+    public String getLifeSpan() {
+        return lifespan;
+    }
+
+    public void setLifeSpan(String lifeSpan) {
+        this.lifespan = lifeSpan;
     }
 }

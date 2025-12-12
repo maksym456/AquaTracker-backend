@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/v1/auth")
 public class AuthController {
 
     private final UserRepository userRepository;
@@ -39,12 +39,11 @@ public class AuthController {
         response.put("success", true);
         
         Map<String, Object> userData = new HashMap<>();
-        userData.put("id", user.getId());
+        userData.put("id", IdMapper.toUserId(user.getId()));
+        userData.put("username", user.getUsername());
         userData.put("email", user.getEmail());
-        userData.put("name", user.getUsername() != null ? user.getUsername() : user.getEmail().split("@")[0]);
-        userData.put("token", "token-" + user.getId() + "-" + System.currentTimeMillis());
-        userData.put("loginTime", LocalDateTime.now().toString());
         
+        response.put("token", "token-" + user.getId() + "-" + System.currentTimeMillis());
         response.put("user", userData);
         
         return ResponseEntity.ok(response);
@@ -54,7 +53,7 @@ public class AuthController {
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         if (request.getEmail() == null || request.getEmail().isEmpty() || 
             request.getPassword() == null || request.getPassword().isEmpty() ||
-            request.getName() == null || request.getName().isEmpty()) {
+            request.getUsername() == null || request.getUsername().isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("error", "All fields are required"));
         }
@@ -71,7 +70,7 @@ public class AuthController {
 
         User user = new User();
         user.setEmail(request.getEmail());
-        user.setUsername(request.getName());
+        user.setUsername(request.getUsername());
         user.setPassword(request.getPassword());
         user.setCreatedAt(LocalDateTime.now());
         
@@ -81,15 +80,12 @@ public class AuthController {
         response.put("success", true);
         
         Map<String, Object> userData = new HashMap<>();
-        userData.put("id", user.getId());
+        userData.put("id", IdMapper.toUserId(user.getId()));
+        userData.put("username", user.getUsername());
         userData.put("email", user.getEmail());
-        userData.put("name", user.getUsername());
-        userData.put("token", "token-" + user.getId() + "-" + System.currentTimeMillis());
-        userData.put("loginTime", LocalDateTime.now().toString());
+        userData.put("createdAt", user.getCreatedAt());
         
-        response.put("user", userData);
-        
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED).body(userData);
     }
 
     public static class LoginRequest {
@@ -113,17 +109,22 @@ public class AuthController {
         }
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser() {
+        return ResponseEntity.ok(Map.of("error", "JWT authentication not implemented yet"));
+    }
+
     public static class RegisterRequest {
-        private String name;
+        private String username;
         private String email;
         private String password;
 
-        public String getName() {
-            return name;
+        public String getUsername() {
+            return username;
         }
 
-        public void setName(String name) {
-            this.name = name;
+        public void setUsername(String username) {
+            this.username = username;
         }
 
         public String getEmail() {

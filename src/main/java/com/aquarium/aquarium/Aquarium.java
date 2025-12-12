@@ -20,6 +20,7 @@ public class Aquarium {
     private String biotope;
     private Double ph;
     private Integer hardness;
+    private Integer hardnessDGH;
     private String description;
     private LocalDateTime createdAt;
 
@@ -27,13 +28,8 @@ public class Aquarium {
     @JoinColumn(name = "user_id", nullable = true)
     private User owner;
 
-    @ManyToMany
-    @JoinTable(
-            name = "aquarium_plant",
-            joinColumns = @JoinColumn(name = "aquarium_id"),
-            inverseJoinColumns = @JoinColumn(name = "plant_id")
-    )
-    private Set<Plant> plants = new java.util.HashSet<>();
+    @OneToMany(mappedBy = "aquarium", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<AquariumPlant> plantsInAquarium = new java.util.ArrayList<>();
 
     @OneToMany(mappedBy = "aquarium", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AquariumFish> fishInAquarium = new java.util.ArrayList<>();
@@ -94,12 +90,23 @@ public class Aquarium {
         this.owner = owner;
     }
 
-    public Set<Plant> getPlants() {
-        return plants;
+    public List<AquariumPlant> getPlantsInAquarium() {
+        return plantsInAquarium;
     }
 
-    public void setPlants(Set<Plant> plants) {
-        this.plants = plants;
+    public void setPlantsInAquarium(List<AquariumPlant> plantsInAquarium) {
+        this.plantsInAquarium = plantsInAquarium;
+    }
+
+    public Integer getHardnessDGH() {
+        return hardnessDGH != null ? hardnessDGH : hardness;
+    }
+
+    public void setHardnessDGH(Integer hardnessDGH) {
+        this.hardnessDGH = hardnessDGH;
+        if (hardness == null) {
+            this.hardness = hardnessDGH;
+        }
     }
 
     public List<AquariumFish> getFishInAquarium() {

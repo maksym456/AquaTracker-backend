@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/plants")
+@RequestMapping("/api/v1/plants")
 public class PlantController {
 
     private final PlantRepository plantRepository;
@@ -19,15 +19,46 @@ public class PlantController {
     }
 
     @GetMapping
-    public List<PlantResponseDto> getAllPlants() {
+    public List<PlantResponseDto> getAllPlants(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String biotope,
+            @RequestParam(required = false) Integer tempMin,
+            @RequestParam(required = false) Integer tempMax,
+            @RequestParam(required = false) Integer limit,
+            @RequestParam(required = false) Integer offset) {
         return plantRepository.findAll().stream()
+                .filter(plant -> {
+                    if (q != null && !q.isEmpty()) {
+                        if (plant.getName() == null || !plant.getName().toLowerCase().contains(q.toLowerCase())) {
+                            return false;
+                        }
+                    }
+                    if (biotope != null && !biotope.isEmpty()) {
+                        if (plant.getBiotope() == null || !plant.getBiotope().equalsIgnoreCase(biotope)) {
+                            return false;
+                        }
+                    }
+                    if (tempMin != null && plant.getTempMaxC() < tempMin) {
+                        return false;
+                    }
+                    if (tempMax != null && plant.getTempMinC() > tempMax) {
+                        return false;
+                    }
+                    return true;
+                })
+                .skip(offset != null ? offset : 0)
+                .limit(limit != null ? limit : Integer.MAX_VALUE)
                 .map(PlantResponseDto::new)
                 .collect(Collectors.toList());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getPlantById(@PathVariable Long id) {
-        return plantRepository.findById(id)
+    public ResponseEntity<?> getPlantById(@PathVariable String id) {
+        Long plantId = IdMapper.fromPlantId(id);
+        if (plantId == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid plant ID format"));
+        }
+        return plantRepository.findById(plantId)
                 .map(plant -> ResponseEntity.ok(new PlantResponseDto(plant)))
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -55,9 +86,13 @@ public class PlantController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updatePlant(@PathVariable Long id, @RequestBody PlantRequestDto request) {
+    public ResponseEntity<?> updatePlant(@PathVariable String id, @RequestBody PlantRequestDto request) {
         try {
-            return plantRepository.findById(id)
+            Long plantId = IdMapper.fromPlantId(id);
+            if (plantId == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid plant ID format"));
+            }
+            return plantRepository.findById(plantId)
                     .map(plant -> {
                         if (request.getName() != null && !request.getName().trim().isEmpty()) {
                             plant.setName(request.getName());
@@ -77,10 +112,14 @@ public class PlantController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deletePlant(@PathVariable Long id) {
+    public ResponseEntity<?> deletePlant(@PathVariable String id) {
         try {
-            if (plantRepository.existsById(id)) {
-                plantRepository.deleteById(id);
+            Long plantId = IdMapper.fromPlantId(id);
+            if (plantId == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid plant ID format"));
+            }
+            if (plantRepository.existsById(plantId)) {
+                plantRepository.deleteById(plantId);
                 return ResponseEntity.ok(Map.of("message", "Plant deleted successfully"));
             } else {
                 return ResponseEntity.notFound().build();
