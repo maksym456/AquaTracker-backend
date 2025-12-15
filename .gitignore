@@ -51,4 +51,5 @@ playwright/.cache/
 
 # Other temp files
 *.log
+log.html   
 tmp/
