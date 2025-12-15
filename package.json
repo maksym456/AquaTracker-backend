@@ -4,9 +4,10 @@
     "description": "API tests",
     "main": "index.js",
     "scripts": {
-      "test": "playwright test"
+        "test": "playwright test"
     },
     "devDependencies": {
-      "@playwright/test": "^1.47.0"
+        "@playwright/test": "^1.47.0",
+        "@types/node": "^25.0.2"
     }
-  }
+}
