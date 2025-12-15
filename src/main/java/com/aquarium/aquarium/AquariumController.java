@@ -79,13 +79,33 @@ public class AquariumController {
 
             Aquarium aquarium = new Aquarium();
             aquarium.setName(request.getName().trim());
-            aquarium.setWaterType(request.getWaterType() != null ? request.getWaterType() : "Słodkowodna");
-            aquarium.setTemperatureC(request.getTemperatureC() != null ? request.getTemperatureC() : 24.0);
+            // Mapowanie waterType: frontend może wysłać "freshwater", baza potrzebuje "Słodkowodna"
+            String waterType = request.getWaterType();
+            if (waterType != null) {
+                if (waterType.equals("freshwater")) {
+                    waterType = "Słodkowodna";
+                } else if (waterType.equals("saltwater")) {
+                    waterType = "Słonowodna";
+                }
+            }
+            aquarium.setWaterType(waterType != null ? waterType : "Słodkowodna");
+            
+            // Mapowanie temperature (frontend może wysłać jako "temperature" lub "temperatureC")
+            Double temp = request.getTemperature() != null ? request.getTemperature() : request.getTemperatureC();
+            aquarium.setTemperatureC(temp != null ? temp : 24.0);
+            
             aquarium.setBiotope(request.getBiotope() != null ? request.getBiotope() : "");
             aquarium.setPh(request.getPh());
-            aquarium.setHardnessDGH(request.getHardnessDGH());
+            
+            // Mapowanie hardness (frontend może wysłać jako "hardness" lub "hardnessDGH")
+            Integer hardness = request.getHardness() != null ? request.getHardness() : request.getHardnessDGH();
+            aquarium.setHardnessDGH(hardness);
+            
             aquarium.setDescription(request.getDescription() != null ? request.getDescription() : "");
-            aquarium.setVolumeLiters(request.getVolumeLiters() != null ? request.getVolumeLiters() : 200);
+            
+            // Mapowanie volume (frontend może wysłać jako "volume" lub "volumeLiters")
+            Integer volume = request.getVolume() != null ? request.getVolume() : request.getVolumeLiters();
+            aquarium.setVolumeLiters(volume != null ? volume : 200);
             aquarium.setCreatedAt(LocalDateTime.now());
             // Ustawiamy domyślnego użytkownika, jeśli baza wymaga user_id
             aquarium.setOwner(getOrCreateDefaultUser());
@@ -122,23 +142,44 @@ public class AquariumController {
                         if (request.getWaterType() != null) {
                             aquarium.setWaterType(request.getWaterType());
                         }
-                        if (request.getTemperatureC() != null) {
-                            aquarium.setTemperatureC(request.getTemperatureC());
+                        // Mapowanie temperature
+                        Double temp = request.getTemperature() != null ? request.getTemperature() : request.getTemperatureC();
+                        if (temp != null) {
+                            aquarium.setTemperatureC(temp);
                         }
+                        
+                        // Mapowanie waterType
+                        String waterType = request.getWaterType();
+                        if (waterType != null) {
+                            if (waterType.equals("freshwater")) {
+                                waterType = "Słodkowodna";
+                            } else if (waterType.equals("saltwater")) {
+                                waterType = "Słonowodna";
+                            }
+                            aquarium.setWaterType(waterType);
+                        }
+                        
                         if (request.getBiotope() != null) {
                             aquarium.setBiotope(request.getBiotope());
                         }
                         if (request.getPh() != null) {
                             aquarium.setPh(request.getPh());
                         }
-                        if (request.getHardnessDGH() != null) {
-                            aquarium.setHardnessDGH(request.getHardnessDGH());
+                        
+                        // Mapowanie hardness
+                        Integer hardness = request.getHardness() != null ? request.getHardness() : request.getHardnessDGH();
+                        if (hardness != null) {
+                            aquarium.setHardnessDGH(hardness);
                         }
+                        
                         if (request.getDescription() != null) {
                             aquarium.setDescription(request.getDescription());
                         }
-                        if (request.getVolumeLiters() != null) {
-                            aquarium.setVolumeLiters(request.getVolumeLiters());
+                        
+                        // Mapowanie volume
+                        Integer volume = request.getVolume() != null ? request.getVolume() : request.getVolumeLiters();
+                        if (volume != null) {
+                            aquarium.setVolumeLiters(volume);
                         }
 
                         aquarium = aquariumRepository.save(aquarium);
@@ -438,12 +479,15 @@ public class AquariumController {
     public static class AquariumRequestDto {
         private String name;
         private String waterType;
-        private Double temperatureC;
+        private Double temperature; // frontend format
+        private Double temperatureC; // backend format (dla kompatybilności)
         private String biotope;
         private Double ph;
-        private Integer hardnessDGH;
+        private Integer hardness; // frontend format
+        private Integer hardnessDGH; // backend format (dla kompatybilności)
         private String description;
-        private Integer volumeLiters;
+        private Integer volume; // frontend format
+        private Integer volumeLiters; // backend format (dla kompatybilności)
         private List<FishInAquariumDto> fish;
         private List<PlantInAquariumDto> plants;
 
@@ -451,16 +495,22 @@ public class AquariumController {
         public void setName(String name) { this.name = name; }
         public String getWaterType() { return waterType; }
         public void setWaterType(String waterType) { this.waterType = waterType; }
+        public Double getTemperature() { return temperature; }
+        public void setTemperature(Double temperature) { this.temperature = temperature; }
         public Double getTemperatureC() { return temperatureC; }
         public void setTemperatureC(Double temperatureC) { this.temperatureC = temperatureC; }
         public String getBiotope() { return biotope; }
         public void setBiotope(String biotope) { this.biotope = biotope; }
         public Double getPh() { return ph; }
         public void setPh(Double ph) { this.ph = ph; }
+        public Integer getHardness() { return hardness; }
+        public void setHardness(Integer hardness) { this.hardness = hardness; }
         public Integer getHardnessDGH() { return hardnessDGH; }
         public void setHardnessDGH(Integer hardnessDGH) { this.hardnessDGH = hardnessDGH; }
         public String getDescription() { return description; }
         public void setDescription(String description) { this.description = description; }
+        public Integer getVolume() { return volume; }
+        public void setVolume(Integer volume) { this.volume = volume; }
         public Integer getVolumeLiters() { return volumeLiters; }
         public void setVolumeLiters(Integer volumeLiters) { this.volumeLiters = volumeLiters; }
         public List<FishInAquariumDto> getFish() { return fish; }

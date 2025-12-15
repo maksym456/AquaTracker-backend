@@ -9,12 +9,13 @@ public class AquariumResponseDto {
     private String ownerId;
     private String name;
     private String description;
-    private Integer volumeLiters;
+    private Integer volume; // zmienione z volumeLiters
     private String waterType;
-    private Double temperatureC;
+    private Double temperature; // zmienione z temperatureC
+    private String biotope;
     private Double ph;
-    private Integer hardnessDGH;
-    private List<FishInAquariumDto> fish;
+    private Integer hardness; // zmienione z hardnessDGH
+    private List<FishInAquariumDto> fishes; // zmienione z fish
     private List<PlantInAquariumDto> plants;
     private AquariumStatusDto status;
     private LocalDateTime createdAt;
@@ -26,22 +27,23 @@ public class AquariumResponseDto {
         this.ownerId = aquarium.getOwner() != null ? IdMapper.toUserId(aquarium.getOwner().getId()) : null;
         this.name = aquarium.getName();
         this.description = aquarium.getDescription();
-        this.volumeLiters = aquarium.getVolumeLiters();
+        this.volume = aquarium.getVolumeLiters(); // mapowanie volumeLiters -> volume
         this.waterType = aquarium.getWaterType();
-        this.temperatureC = aquarium.getTemperatureC();
+        this.temperature = aquarium.getTemperatureC(); // mapowanie temperatureC -> temperature
+        this.biotope = aquarium.getBiotope();
         this.ph = aquarium.getPh();
-        this.hardnessDGH = aquarium.getHardnessDGH();
+        this.hardness = aquarium.getHardnessDGH(); // mapowanie hardnessDGH -> hardness
         this.createdAt = aquarium.getCreatedAt();
         
         try {
-            this.fish = aquarium.getFishInAquarium() != null && !aquarium.getFishInAquarium().isEmpty()
+            this.fishes = aquarium.getFishInAquarium() != null && !aquarium.getFishInAquarium().isEmpty()
                 ? aquarium.getFishInAquarium().stream()
                     .filter(af -> af != null && af.getFishSpecies() != null)
                     .map(af -> new FishInAquariumDto(IdMapper.toFishId(af.getFishSpecies().getId()), af.getFishCount()))
                     .collect(Collectors.toList())
                 : List.of();
         } catch (Exception e) {
-            this.fish = List.of();
+            this.fishes = List.of();
         }
             
         try {
@@ -99,12 +101,12 @@ public class AquariumResponseDto {
         this.description = description;
     }
 
-    public Integer getVolumeLiters() {
-        return volumeLiters;
+    public Integer getVolume() {
+        return volume;
     }
 
-    public void setVolumeLiters(Integer volumeLiters) {
-        this.volumeLiters = volumeLiters;
+    public void setVolume(Integer volume) {
+        this.volume = volume;
     }
 
     public String getWaterType() {
@@ -115,12 +117,20 @@ public class AquariumResponseDto {
         this.waterType = waterType;
     }
 
-    public Double getTemperatureC() {
-        return temperatureC;
+    public Double getTemperature() {
+        return temperature;
     }
 
-    public void setTemperatureC(Double temperatureC) {
-        this.temperatureC = temperatureC;
+    public void setTemperature(Double temperature) {
+        this.temperature = temperature;
+    }
+
+    public String getBiotope() {
+        return biotope;
+    }
+
+    public void setBiotope(String biotope) {
+        this.biotope = biotope;
     }
 
     public Double getPh() {
@@ -131,20 +141,20 @@ public class AquariumResponseDto {
         this.ph = ph;
     }
 
-    public Integer getHardnessDGH() {
-        return hardnessDGH;
+    public Integer getHardness() {
+        return hardness;
     }
 
-    public void setHardnessDGH(Integer hardnessDGH) {
-        this.hardnessDGH = hardnessDGH;
+    public void setHardness(Integer hardness) {
+        this.hardness = hardness;
     }
 
-    public List<FishInAquariumDto> getFish() {
-        return fish;
+    public List<FishInAquariumDto> getFishes() {
+        return fishes;
     }
 
-    public void setFish(List<FishInAquariumDto> fish) {
-        this.fish = fish;
+    public void setFishes(List<FishInAquariumDto> fishes) {
+        this.fishes = fishes;
     }
 
     public List<PlantInAquariumDto> getPlants() {
@@ -171,4 +181,3 @@ public class AquariumResponseDto {
         this.createdAt = createdAt;
     }
 }
-
