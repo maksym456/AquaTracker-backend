@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/v1/fishes")
+@RequestMapping("/api/v1/fish")
 public class FishController {
 
     private final FishSpeciesRepository fishRepository;
