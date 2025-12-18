@@ -1,15 +1,13 @@
 md
-# AquaTracker API v1
+# AquaTracker API v2
 
 Base URL:  
-`https://api.aquatracker.com/api/v1/`
+`http://localhost:3001/api/v2/`
 
 Wszystkie requesty i response’y są w JSON (`Content-Type: application/json`).
-
 Autoryzacja dla endpointów chronionych:
 
 `Authorization: Bearer <JWT>`
-
 
 ## 1. Modele danych
 
@@ -24,7 +22,6 @@ Autoryzacja dla endpointów chronionych:
   "settings": {
     "language": "pl",
     "theme": "dark",
-    "sessionLengthMinutes": 60,
     "dataSource": "production"
   }
 }
@@ -198,81 +195,7 @@ Przykładowe `actionType`:
 }
 ```
 
-## 2. Authentication
-
-### 2.1 Register
-
-`POST /auth/register`
-
-Request:
-
-```json
-{
-  "username": "aquarist123",
-  "email": "user@example.com",
-  "password": "StrongPassword123"
-}
-```
-
-Response 201:
-
-```json
-{
-  "id": "u_123",
-  "username": "aquarist123",
-  "email": "user@example.com",
-  "createdAt": "2025-10-27T12:00:00Z"
-}
-```
-
-### 2.2 Login
-
-`POST /auth/login`
-
-Request:
-
-```json
-{
-  "email": "user@example.com",
-  "password": "StrongPassword123"
-}
-```
-
-Response 200:
-
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiIs...",
-  "user": {
-    "id": "u_123",
-    "username": "aquarist123",
-    "email": "user@example.com"
-  }
-}
-```
-
 ### 2.3 Get current user
-
-`GET /auth/me`
-
-Headers: `Authorization: Bearer <token>`
-
-Response 200:
-
-```json
-{
-  "id": "u_123",
-  "username": "aquarist123",
-  "email": "user@example.com",
-  "createdAt": "2025-10-27T12:00:00Z",
-  "settings": {
-    "language": "pl",
-    "theme": "dark",
-    "sessionLengthMinutes": 60,
-    "dataSource": "production"
-  }
-}
-```
 
 ## 3. Settings
 
@@ -320,15 +243,6 @@ Response 200:
   "dataSource": "demo"
 }
 ```
-
-### 3.3 Deactivate account
-
-`DELETE /account`
-
-Headers: `Authorization: Bearer <token>`
-
-Response 204
-
 ## 4. Fish API
 
 ### 4.1 List fish
