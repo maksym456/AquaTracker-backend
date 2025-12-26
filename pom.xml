@@ -9,10 +9,10 @@
         <relativePath/>
     </parent>
     <groupId>com.aquarium</groupId>
-    <artifactId>Aquarium_OLD</artifactId>
+    <artifactId>AquaTracker-backend</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>Aquarium</name>
-    <description>Aquarium</description>
+    <name>AquaTracker-backend</name>
+    <description>AquaTracker-backend</description>
     <url/>
     <licenses>
         <license/>
