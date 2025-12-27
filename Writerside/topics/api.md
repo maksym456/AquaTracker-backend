@@ -1,8 +1,8 @@
 md
-# AquaTracker API v2
+# AquaTracker API v1
 
 Base URL:  
-`http://localhost:3001/api/v2/`
+`http://localhost:3001/api/v1/`
 
 Wszystkie requesty i response’y są w JSON (`Content-Type: application/json`).
 Autoryzacja dla endpointów chronionych:
