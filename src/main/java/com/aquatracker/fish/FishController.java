@@ -1,5 +1,5 @@
 package com.aquatracker.fish;
-
+import org.springframework.context.annotation.Profile;
 import com.aquatracker.common.IdMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Profile("!dev")
 @RestController
 @RequestMapping("/api/v1/fish")
 public class FishController {
