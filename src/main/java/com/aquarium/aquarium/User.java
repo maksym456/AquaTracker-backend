@@ -1,30 +1,39 @@
 package com.aquarium.aquarium;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 @Entity
-@Table(name = "users")
+@Table(name = "users", uniqueConstraints = {
+    @UniqueConstraint(columnNames = "email")
+})
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "username")
     private String username;
 
+    @Column(name = "email", unique = true, nullable = false)
     private String email;
 
+    @Column(name = "password")
     private String password;
 
+    @Column(name = "created_at")
     private java.time.LocalDateTime createdAt;
 
+    @Column(name = "settings_language")
     private String settingsLanguage;
+    
+    @Column(name = "settings_theme")
     private String settingsTheme;
+    
+    @Column(name = "settings_session_length_minutes")
     private Integer settingsSessionLengthMinutes;
+    
+    @Column(name = "settings_data_source")
     private String settingsDataSource;
 
     public Long getId() {

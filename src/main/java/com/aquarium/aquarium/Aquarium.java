@@ -3,7 +3,6 @@ package com.aquarium.aquarium;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Set;
 
 @Entity
 @Table(name = "aquariums")
@@ -13,15 +12,34 @@ public class Aquarium {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "name")
     private String name;
+    
+    @Column(name = "volume_liters")
     private int volumeLiters;
+    
+    @Column(name = "temperaturec")
     private double temperatureC;
+    
+    @Column(name = "water_type")
     private String waterType;
+    
+    @Column(name = "biotope")
     private String biotope;
+    
+    @Column(name = "ph")
     private Double ph;
+    
+    @Column(name = "hardness")
     private Integer hardness;
+    
+    @Column(name = "hardness_dgh")
     private Integer hardnessDGH;
+    
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
+    
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @ManyToOne

@@ -3,7 +3,9 @@ package com.aquarium.aquarium;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "aquarium_plant")
+@Table(name = "aquarium_plant", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"aquarium_id", "plant_id"})
+})
 public class AquariumPlant {
 
     @Id
@@ -11,13 +13,14 @@ public class AquariumPlant {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "aquarium_id")
+    @JoinColumn(name = "aquarium_id", nullable = false)
     private Aquarium aquarium;
 
     @ManyToOne
-    @JoinColumn(name = "plant_id")
+    @JoinColumn(name = "plant_id", nullable = false)
     private Plant plant;
 
+    @Column(name = "plant_count", nullable = false)
     private int plantCount;
 
     public Long getId() {

@@ -12,20 +12,29 @@ public class LogEntry {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = true)
     private User user;
 
     @ManyToOne
-    @JoinColumn(name = "aquarium_id")
+    @JoinColumn(name = "aquarium_id", nullable = true)
     private Aquarium aquarium;
 
+    @Column(name = "aquarium_name")
     private String aquariumName;
+    
+    @Column(name = "action_type")
     private String actionType;
+    
+    @Column(name = "title")
     private String title;
+    
+    @Column(name = "message", columnDefinition = "TEXT")
     private String message;
+    
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "metadata", columnDefinition = "TEXT")
     private String metadata;
 
     public Long getId() {

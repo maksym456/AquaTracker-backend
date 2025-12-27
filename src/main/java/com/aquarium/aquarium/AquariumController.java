@@ -21,6 +21,7 @@ public class AquariumController {
     private final AquariumFishRepository aquariumFishRepository;
     private final AquariumPlantRepository aquariumPlantRepository;
     private final AquariumValidationService validationService;
+    private final LogEntryRepository logEntryRepository;
 
     public AquariumController(AquariumRepository aquariumRepository,
                              FishSpeciesRepository fishRepository,
@@ -28,7 +29,8 @@ public class AquariumController {
                              UserRepository userRepository,
                              AquariumFishRepository aquariumFishRepository,
                              AquariumPlantRepository aquariumPlantRepository,
-                             AquariumValidationService validationService) {
+                             AquariumValidationService validationService,
+                             LogEntryRepository logEntryRepository) {
         this.aquariumRepository = aquariumRepository;
         this.fishRepository = fishRepository;
         this.plantRepository = plantRepository;
@@ -36,6 +38,7 @@ public class AquariumController {
         this.aquariumFishRepository = aquariumFishRepository;
         this.aquariumPlantRepository = aquariumPlantRepository;
         this.validationService = validationService;
+        this.logEntryRepository = logEntryRepository;
     }
     
     private User getOrCreateDefaultUser() {
@@ -48,6 +51,41 @@ public class AquariumController {
                     defaultUser.setCreatedAt(LocalDateTime.now());
                     return userRepository.save(defaultUser);
                 });
+    }
+
+    private LogEntry createLogEntry(User user, Aquarium aquarium, String actionType, String title, String message, String metadata) {
+        LogEntry logEntry = new LogEntry();
+        logEntry.setUser(user);
+        logEntry.setAquarium(aquarium);
+        logEntry.setAquariumName(aquarium != null ? aquarium.getName() : null);
+        logEntry.setActionType(actionType);
+        logEntry.setTitle(title);
+        logEntry.setMessage(message);
+        logEntry.setMetadata(metadata);
+        logEntry.setCreatedAt(LocalDateTime.now());
+        return logEntryRepository.save(logEntry);
+    }
+
+    private Map<String, Object> createLogEntryResponseDto(LogEntry logEntry) {
+        Map<String, Object> dto = new java.util.HashMap<>();
+        dto.put("id", IdMapper.toLogId(logEntry.getId()));
+        dto.put("userId", logEntry.getUser() != null ? IdMapper.toUserId(logEntry.getUser().getId()) : null);
+        dto.put("aquariumId", logEntry.getAquarium() != null ? IdMapper.toAquariumId(logEntry.getAquarium().getId()) : null);
+        dto.put("aquariumName", logEntry.getAquariumName());
+        dto.put("actionType", logEntry.getActionType());
+        dto.put("title", logEntry.getTitle());
+        dto.put("message", logEntry.getMessage());
+        dto.put("createdAt", logEntry.getCreatedAt() != null ? logEntry.getCreatedAt().toString() : null);
+        if (logEntry.getMetadata() != null && !logEntry.getMetadata().isEmpty()) {
+            try {
+                dto.put("metadata", new com.fasterxml.jackson.databind.ObjectMapper().readValue(logEntry.getMetadata(), Map.class));
+            } catch (Exception e) {
+                dto.put("metadata", Map.of());
+            }
+        } else {
+            dto.put("metadata", Map.of());
+        }
+        return dto;
     }
 
     @GetMapping
@@ -230,17 +268,31 @@ public class AquariumController {
             FishSpecies fishSpecies = fishRepository.findById(fishId)
                     .orElseThrow(() -> new RuntimeException("Fish species not found"));
 
-            AquariumFish aquariumFish = new AquariumFish();
-            aquariumFish.setAquarium(aquarium);
-            aquariumFish.setFishSpecies(fishSpecies);
-            aquariumFish.setFishCount(request.getCount() != null ? request.getCount() : 1);
-
-            aquariumFish = aquariumFishRepository.save(aquariumFish);
-            System.out.println("AquariumFish saved with ID: " + aquariumFish.getId());
+            User user = aquarium.getOwner() != null ? aquarium.getOwner() : getOrCreateDefaultUser();
+            int count = request.getCount() != null ? request.getCount() : 1;
+            
+            AquariumFish existingAquariumFish = aquariumFishRepository.findByAquariumIdAndFishSpeciesId(aquariumId, fishId).orElse(null);
+            
+            if (existingAquariumFish != null) {
+                existingAquariumFish.setFishCount(existingAquariumFish.getFishCount() + count);
+                aquariumFishRepository.save(existingAquariumFish);
+            } else {
+                AquariumFish aquariumFish = new AquariumFish();
+                aquariumFish.setAquarium(aquarium);
+                aquariumFish.setFishSpecies(fishSpecies);
+                aquariumFish.setFishCount(count);
+                aquariumFishRepository.save(aquariumFish);
+            }
             
             aquarium = aquariumRepository.findById(aquariumId).orElse(aquarium);
             AquariumResponseDto response = new AquariumResponseDto(aquarium, validationService);
-            return ResponseEntity.ok(Map.of("aquarium", response));
+            
+            // Create log entry
+            String metadata = String.format("{\"fishId\":\"%s\",\"count\":%d}", request.getFishId(), count);
+            LogEntry logEntry = createLogEntry(user, aquarium, "FISH_ADDED", "Dodano ryby", 
+                String.format("Dodano %d x %s.", count, fishSpecies.getName()), metadata);
+            
+            return ResponseEntity.ok(Map.of("aquarium", response, "logEntry", createLogEntryResponseDto(logEntry)));
         } catch (Exception e) {
             e.printStackTrace();
             System.err.println("Error in addFishToAquarium: " + e.getClass().getSimpleName() + " - " + e.getMessage());
@@ -269,6 +321,10 @@ public class AquariumController {
                     .orElseThrow(() -> new RuntimeException("Fish not found in aquarium"));
             
             Integer newCount = request.get("count");
+            User user = aquarium.getOwner() != null ? aquarium.getOwner() : getOrCreateDefaultUser();
+            FishSpecies fishSpecies = aquariumFish.getFishSpecies();
+            int oldCount = aquariumFish.getFishCount();
+            
             if (newCount != null && newCount > 0) {
                 aquariumFish.setFishCount(newCount);
                 aquariumFishRepository.save(aquariumFish);
@@ -277,7 +333,14 @@ public class AquariumController {
             }
             
             aquarium = aquariumRepository.findById(aquariumId).orElse(aquarium);
-            return ResponseEntity.ok(Map.of("aquarium", new AquariumResponseDto(aquarium, validationService)));
+            AquariumResponseDto response = new AquariumResponseDto(aquarium, validationService);
+            
+            // Create log entry
+            String metadata = String.format("{\"fishId\":\"%s\",\"count\":%d}", fishId, newCount != null ? newCount : oldCount);
+            LogEntry logEntry = createLogEntry(user, aquarium, "FISH_UPDATED", "Zmieniono ilość ryb", 
+                String.format("Zmieniono ilość %s na %d.", fishSpecies != null ? fishSpecies.getName() : "ryby", newCount != null ? newCount : oldCount), metadata);
+            
+            return ResponseEntity.ok(Map.of("aquarium", response, "logEntry", createLogEntryResponseDto(logEntry)));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Failed to update fish count: " + e.getMessage()));
@@ -302,6 +365,9 @@ public class AquariumController {
                     .findFirst()
                     .orElseThrow(() -> new RuntimeException("Fish not found in aquarium"));
             
+            User user = aquarium.getOwner() != null ? aquarium.getOwner() : getOrCreateDefaultUser();
+            FishSpecies fishSpecies = aquariumFish.getFishSpecies();
+            
             if (count != null && count < aquariumFish.getFishCount()) {
                 aquariumFish.setFishCount(aquariumFish.getFishCount() - count);
                 aquariumFishRepository.save(aquariumFish);
@@ -310,7 +376,14 @@ public class AquariumController {
             }
             
             aquarium = aquariumRepository.findById(aquariumId).orElse(aquarium);
-            return ResponseEntity.ok(Map.of("aquarium", new AquariumResponseDto(aquarium, validationService)));
+            AquariumResponseDto response = new AquariumResponseDto(aquarium, validationService);
+            
+            // Create log entry
+            String metadata = String.format("{\"fishId\":\"%s\"}", fishId);
+            LogEntry logEntry = createLogEntry(user, aquarium, "FISH_REMOVED", "Usunięto ryby", 
+                String.format("Usunięto %s.", fishSpecies != null ? fishSpecies.getName() : "ryby"), metadata);
+            
+            return ResponseEntity.ok(Map.of("aquarium", response, "logEntry", createLogEntryResponseDto(logEntry)));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Failed to remove fish: " + e.getMessage()));
@@ -336,20 +409,30 @@ public class AquariumController {
             Plant plant = plantRepository.findById(plantId)
                     .orElseThrow(() -> new RuntimeException("Plant not found"));
 
+            User user = aquarium.getOwner() != null ? aquarium.getOwner() : getOrCreateDefaultUser();
+            int count = request.getCount() != null ? request.getCount() : 1;
+            
             AquariumPlant existing = aquariumPlantRepository.findByAquariumIdAndPlantId(aquariumId, plantId).orElse(null);
             if (existing != null) {
-                existing.setPlantCount(existing.getPlantCount() + (request.getCount() != null ? request.getCount() : 1));
+                existing.setPlantCount(existing.getPlantCount() + count);
                 aquariumPlantRepository.save(existing);
             } else {
                 AquariumPlant aquariumPlant = new AquariumPlant();
                 aquariumPlant.setAquarium(aquarium);
                 aquariumPlant.setPlant(plant);
-                aquariumPlant.setPlantCount(request.getCount() != null ? request.getCount() : 1);
+                aquariumPlant.setPlantCount(count);
                 aquariumPlantRepository.save(aquariumPlant);
             }
 
             aquarium = aquariumRepository.findById(aquariumId).orElse(aquarium);
-            return ResponseEntity.ok(Map.of("aquarium", new AquariumResponseDto(aquarium, validationService)));
+            AquariumResponseDto response = new AquariumResponseDto(aquarium, validationService);
+            
+            // Create log entry
+            String metadata = String.format("{\"plantId\":\"%s\",\"count\":%d}", request.getPlantId(), count);
+            LogEntry logEntry = createLogEntry(user, aquarium, "PLANT_ADDED", "Dodano rośliny", 
+                String.format("Dodano %d x %s.", count, plant.getName()), metadata);
+            
+            return ResponseEntity.ok(Map.of("aquarium", response, "logEntry", createLogEntryResponseDto(logEntry)));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Failed to add plant: " + e.getMessage()));
@@ -373,6 +456,10 @@ public class AquariumController {
                     .orElseThrow(() -> new RuntimeException("Plant not found in aquarium"));
             
             Integer newCount = request.get("count");
+            User user = aquarium.getOwner() != null ? aquarium.getOwner() : getOrCreateDefaultUser();
+            Plant plant = aquariumPlant.getPlant();
+            int oldCount = aquariumPlant.getPlantCount();
+            
             if (newCount != null && newCount > 0) {
                 aquariumPlant.setPlantCount(newCount);
                 aquariumPlantRepository.save(aquariumPlant);
@@ -381,7 +468,14 @@ public class AquariumController {
             }
             
             aquarium = aquariumRepository.findById(aquariumId).orElse(aquarium);
-            return ResponseEntity.ok(Map.of("aquarium", new AquariumResponseDto(aquarium, validationService)));
+            AquariumResponseDto response = new AquariumResponseDto(aquarium, validationService);
+            
+            // Create log entry
+            String metadata = String.format("{\"plantId\":\"%s\",\"count\":%d}", plantId, newCount != null ? newCount : oldCount);
+            LogEntry logEntry = createLogEntry(user, aquarium, "PLANT_UPDATED", "Zmieniono ilość roślin", 
+                String.format("Zmieniono ilość %s na %d.", plant != null ? plant.getName() : "rośliny", newCount != null ? newCount : oldCount), metadata);
+            
+            return ResponseEntity.ok(Map.of("aquarium", response, "logEntry", createLogEntryResponseDto(logEntry)));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Failed to update plant count: " + e.getMessage()));
@@ -404,6 +498,9 @@ public class AquariumController {
             AquariumPlant aquariumPlant = aquariumPlantRepository.findByAquariumIdAndPlantId(aquariumId, pId)
                     .orElseThrow(() -> new RuntimeException("Plant not found in aquarium"));
             
+            User user = aquarium.getOwner() != null ? aquarium.getOwner() : getOrCreateDefaultUser();
+            Plant plant = aquariumPlant.getPlant();
+            
             if (count != null && count < aquariumPlant.getPlantCount()) {
                 aquariumPlant.setPlantCount(aquariumPlant.getPlantCount() - count);
                 aquariumPlantRepository.save(aquariumPlant);
@@ -412,7 +509,14 @@ public class AquariumController {
             }
             
             aquarium = aquariumRepository.findById(aquariumId).orElse(aquarium);
-            return ResponseEntity.ok(Map.of("aquarium", new AquariumResponseDto(aquarium, validationService)));
+            AquariumResponseDto response = new AquariumResponseDto(aquarium, validationService);
+            
+            // Create log entry
+            String metadata = String.format("{\"plantId\":\"%s\"}", plantId);
+            LogEntry logEntry = createLogEntry(user, aquarium, "PLANT_REMOVED", "Usunięto rośliny", 
+                String.format("Usunięto %s.", plant != null ? plant.getName() : "rośliny"), metadata);
+            
+            return ResponseEntity.ok(Map.of("aquarium", response, "logEntry", createLogEntryResponseDto(logEntry)));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Failed to remove plant: " + e.getMessage()));

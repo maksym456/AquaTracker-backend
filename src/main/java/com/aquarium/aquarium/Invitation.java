@@ -12,17 +12,23 @@ public class Invitation {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "sender_id")
+    @JoinColumn(name = "sender_id", nullable = false)
     private User sender;
 
+    @Column(name = "recipient_email", nullable = false)
     private String recipientEmail;
 
     @ManyToOne
     @JoinColumn(name = "recipient_id")
     private User recipient;
 
+    @Column(name = "status")
     private String status;
+    
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
+    
+    @Column(name = "responded_at")
     private LocalDateTime respondedAt;
 
     public Long getId() {

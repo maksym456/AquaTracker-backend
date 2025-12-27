@@ -4,7 +4,9 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "contacts")
+@Table(name = "contacts", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"user_id", "friend_id"})
+})
 public class Contact {
 
     @Id
@@ -12,16 +14,23 @@ public class Contact {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @ManyToOne
-    @JoinColumn(name = "friend_id")
+    @JoinColumn(name = "friend_id", nullable = false)
     private User friend;
 
+    @Column(name = "friend_name")
     private String friendName;
+    
+    @Column(name = "friend_email")
     private String friendEmail;
+    
+    @Column(name = "status")
     private String status;
+    
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     public Long getId() {
