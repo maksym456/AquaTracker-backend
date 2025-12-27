@@ -9,6 +9,9 @@ import com.aquatracker.plant.PlantInAquariumDto;
 import com.aquatracker.plant.PlantRepository;
 import com.aquatracker.user.User;
 import com.aquatracker.user.UserRepository;
+import com.aquatracker.logs.LogEntry;
+import com.aquatracker.logs.LogEntryRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -87,7 +90,7 @@ public class AquariumController {
         dto.put("createdAt", logEntry.getCreatedAt() != null ? logEntry.getCreatedAt().toString() : null);
         if (logEntry.getMetadata() != null && !logEntry.getMetadata().isEmpty()) {
             try {
-                dto.put("metadata", new com.fasterxml.jackson.databind.ObjectMapper().readValue(logEntry.getMetadata(), Map.class));
+                dto.put("metadata", new ObjectMapper().readValue(logEntry.getMetadata(), Map.class));
             } catch (Exception e) {
                 dto.put("metadata", Map.of());
             }
