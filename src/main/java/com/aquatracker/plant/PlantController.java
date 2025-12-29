@@ -1,6 +1,7 @@
 package com.aquatracker.plant;
 
 import com.aquatracker.common.IdMapper;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -9,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+
+@Profile("!dev")
 @RestController
 @RequestMapping("/api/v1/plants")
 public class PlantController {
