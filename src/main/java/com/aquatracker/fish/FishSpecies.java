@@ -169,7 +169,7 @@ public class FishSpecies {
     }
 
     public String getIconName() {
-        return iconName != null ? iconName : (image != null ? image : "");
+        return iconName;
     }
 
     public void setIconName(String iconName) {
