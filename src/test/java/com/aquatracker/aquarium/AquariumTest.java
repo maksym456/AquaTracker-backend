@@ -1,13 +1,24 @@
 package com.aquatracker.aquarium;
 
 import org.junit.jupiter.api.Test;
-
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
+import org.junit.jupiter.api.BeforeAll;
+import java.util.Set;
 import java.time.LocalDateTime;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 class AquariumTest {
 
+private static Validator validator;
+
+@BeforeAll
+static void setUpValidator() {
+    ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+    validator = factory.getValidator();
+}
     @Test
     void shouldSetAndGetAllBasicFieldsCorrectly() {
         Aquarium aquarium = new Aquarium();
@@ -59,5 +70,65 @@ class AquariumTest {
         assertThat(aquarium.getHardness()).isNull();
         assertThat(aquarium.getHardnessDGH()).isNull();
         assertThat(aquarium.getName()).isNull();
+    }
+    @Test
+    void shouldFailValidationWhenNameBlank() {
+        Aquarium aquarium = new Aquarium();
+        aquarium.setVolumeLiters(100);      // poprawne
+        aquarium.setTemperatureC(25.0);     // poprawne (powyżej 15.0)
+        aquarium.setPh(7.0);                // poprawne (poniżej 9.0)
+        Set<ConstraintViolation<Aquarium>> violations = validator.validate(aquarium);
+        assertThat(violations).hasSize(1);
+        assertThat(violations.iterator().next().getMessage()).contains("wymagana");
+    }
+
+    @Test
+    void shouldFailValidationWhenVolumeTooSmall() {
+        Aquarium aquarium = new Aquarium();
+        aquarium.setName("Test");          
+        aquarium.setTemperatureC(25.0);     
+        aquarium.setPh(7.0);                
+        aquarium.setVolumeLiters(0);        // zły volume
+
+        Set<ConstraintViolation<Aquarium>> violations = validator.validate(aquarium);
+        assertThat(violations).hasSize(1);
+        assertThat(violations.iterator().next().getMessage()).contains("większa niż 0");
+    }
+
+    @Test
+    void shouldFailValidationWhenTemperatureTooLow() {
+        Aquarium aquarium = new Aquarium();
+        aquarium.setName("Test");           
+        aquarium.setVolumeLiters(100);      
+        aquarium.setPh(7.0);                
+        aquarium.setTemperatureC(10.0);     
+
+        Set<ConstraintViolation<Aquarium>> violations = validator.validate(aquarium);
+        assertThat(violations).hasSize(1);
+        assertThat(violations.iterator().next().getMessage()).contains("zbyt niska");
+    }
+
+    @Test
+    void shouldFailValidationWhenPhTooHigh() {
+        Aquarium aquarium = new Aquarium();
+        aquarium.setName("Test");          
+        aquarium.setVolumeLiters(100);      
+        aquarium.setTemperatureC(25.0);    
+        aquarium.setPh(10.0);              
+
+        Set<ConstraintViolation<Aquarium>> violations = validator.validate(aquarium);
+        assertThat(violations).hasSize(1);
+        assertThat(violations.iterator().next().getMessage()).contains("zbyt wysokie");
+    }
+
+    @Test
+    void shouldFailWithMultipleViolations() {
+        Aquarium aquarium = new Aquarium();
+        aquarium.setVolumeLiters(0);
+        aquarium.setTemperatureC(10.0);
+        aquarium.setPh(10.0);
+
+        Set<ConstraintViolation<Aquarium>> violations = validator.validate(aquarium);
+        assertThat(violations).hasSize(4);  
     }
 }

@@ -2,6 +2,10 @@ package com.aquatracker.aquarium;
 
 import com.aquatracker.user.User;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -14,12 +18,16 @@ public class Aquarium {
     private Long id;
 
     @Column(name = "name")
+    @NotBlank(message = "Nazwa akwarium jest wymagana")
     private String name;
     
     @Column(name = "volume_liters")
+    @Min(value = 1, message = "Objętość musi być większa niż 0 litrów")
     private int volumeLiters;
     
     @Column(name = "temperaturec")
+    @DecimalMin(value = "15.0", message = "Temperatura zbyt niska dla większości ryb")
+    @DecimalMax(value = "32.0", message = "Temperatura zbyt wysoka")
     private double temperatureC;
     
     @Column(name = "water_type")
@@ -29,6 +37,8 @@ public class Aquarium {
     private String biotope;
     
     @Column(name = "ph")
+    @DecimalMin(value = "5.0", message = "pH zbyt niskie")
+    @DecimalMax(value = "9.0", message = "pH zbyt wysokie")
     private Double ph;
     
     @Column(name = "hardness")
