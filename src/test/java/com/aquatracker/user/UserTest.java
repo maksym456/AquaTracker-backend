@@ -1,12 +1,25 @@
 package com.aquatracker.user;
 
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
+import java.util.Set;
+
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import java.time.LocalDateTime;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 class UserTest {
+
+    private static Validator validator;
+
+@BeforeAll
+static void setUpValidator() {
+    ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+    validator = factory.getValidator();
+}
 
     @Test
     void shouldSetAndGetAllBasicFieldsCorrectly() {
@@ -68,6 +81,56 @@ class UserTest {
         assertThat(user.getSettingsTheme()).isEqualTo("light");
         assertThat(user.getSettingsSessionLengthMinutes()).isEqualTo(60);
         assertThat(user.getSettingsDataSource()).isEqualTo("production");
+    }
+
+    @Test
+    void shouldPassValidationWhenAllFieldsValid() {
+        User user = new User();
+        user.setUsername("validuser");
+        user.setEmail("valid@example.com");
+        user.setPassword("securepass123");  // Dłuższe niż 8 znaków
+    
+        Set<ConstraintViolation<User>> violations = validator.validate(user);
+        assertThat(violations).isEmpty();  // Brak błędów – dane dobre
+    }
+    
+    @Test
+    void shouldFailValidationWhenUsernameBlank() {
+        User user = new User();
+        user.setEmail("valid@example.com");
+        user.setPassword("securepass123");
+        Set<ConstraintViolation<User>> violations = validator.validate(user);
+        assertThat(violations).hasSize(1);
+        assertThat(violations.iterator().next().getMessage()).contains("wymagana");
+    }
+    
+    @Test
+    void shouldFailValidationWhenEmailInvalid() {
+        User user = new User();
+        user.setUsername("validuser");
+        user.setEmail("invalid-email");  // Brak @, niepoprawny format
+        user.setPassword("securepass123");
+        Set<ConstraintViolation<User>> violations = validator.validate(user);
+        assertThat(violations).hasSize(1);
+        assertThat(violations.iterator().next().getMessage()).contains("poprawny");
+    }
+    
+    @Test
+    void shouldFailValidationWhenPasswordTooShort() {
+        User user = new User();
+        user.setUsername("validuser");
+        user.setEmail("valid@example.com");
+        user.setPassword("short");  
+        Set<ConstraintViolation<User>> violations = validator.validate(user);
+        assertThat(violations).hasSize(1);
+        assertThat(violations.iterator().next().getMessage()).contains("co najmniej 8");
+    }
+    
+    @Test
+    void shouldFailWithMultipleViolations() {
+        User user = new User();
+        Set<ConstraintViolation<User>> violations = validator.validate(user);
+        assertThat(violations).hasSize(3);  
     }
 
     @Test

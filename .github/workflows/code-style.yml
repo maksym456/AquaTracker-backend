@@ -1,5 +1,4 @@
-name: Code Style Check  # Name shown in GitHub Actions tab
-
+name: Code Style Check  
 on:  
   push:  
     branches: [ main ] 

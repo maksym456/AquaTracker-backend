@@ -1,6 +1,9 @@
 package com.aquatracker.user;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(name = "users", uniqueConstraints = {
@@ -13,12 +16,17 @@ public class User {
     private Long id;
 
     @Column(name = "username")
+    @NotBlank(message = "Nazwa użytkownika jest wymagana")
     private String username;
 
     @Column(name = "email", unique = true, nullable = false)
+    @NotBlank(message = "Email jest wymagany")
+    @Email(message = "Email musi być poprawny")
     private String email;
 
     @Column(name = "password")
+    @NotBlank(message = "Hasło jest wymagane")
+    @Size(min = 8, message = "Hasło musi mieć co najmniej 8 znaków")
     private String password;
 
     @Column(name = "created_at")
