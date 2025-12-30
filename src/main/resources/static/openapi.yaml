@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: AquaTracker API v1
-  description:  >
+  description: >
     AquaTracker REST API. All request/response bodies are application/json.
     Base URL: http://localhost:3001/api/v1/
   version: 1.0.0
@@ -27,6 +27,17 @@ components:
       bearerFormat: JWT
 
   schemas:
+    Id:
+      type: integer
+      format: int64
+      example: 123
+
+    NullableId:
+      type: integer
+      format: int64
+      nullable: true
+      example: null
+
     ErrorResponse:
       type: object
       additionalProperties: false
@@ -46,8 +57,8 @@ components:
           nullable: true
           additionalProperties: true
           example:
-            fishId: fish_betta
-            conflictingFishIds: [fish_betta_male_2]
+            fishId: 1
+            conflictingFishIds: [2]
       required: [error, message]
 
     Language:
@@ -80,8 +91,7 @@ components:
       additionalProperties: false
       properties:
         id:
-          type: string
-          example: u_123
+          $ref: "#/components/schemas/Id"
         username:
           type: string
           example: aquarist123
@@ -133,8 +143,7 @@ components:
       additionalProperties: false
       properties:
         id:
-          type: string
-          example: fish_001
+          $ref: "#/components/schemas/Id"
         name:
           type: string
           example: Neon Innesa
@@ -247,8 +256,7 @@ components:
       additionalProperties: false
       properties:
         id:
-          type: string
-          example: plant_001
+          $ref: "#/components/schemas/Id"
         name:
           type: string
           example: Moczarka
@@ -309,8 +317,7 @@ components:
       additionalProperties: false
       properties:
         fishId:
-          type: string
-          example: fish_001
+          $ref: "#/components/schemas/Id"
         count:
           type: integer
           minimum: 0
@@ -322,8 +329,7 @@ components:
       additionalProperties: false
       properties:
         plantId:
-          type: string
-          example: plant_001
+          $ref: "#/components/schemas/Id"
         count:
           type: integer
           minimum: 0
@@ -365,11 +371,9 @@ components:
       additionalProperties: false
       properties:
         id:
-          type: string
-          example: aq_777
+          $ref: "#/components/schemas/Id"
         ownerId:
-          type: string
-          example: u_123
+          $ref: "#/components/schemas/Id"
         name:
           type: string
           example: Moje pierwsze akwarium
@@ -469,7 +473,7 @@ components:
       additionalProperties: false
       properties:
         fishId:
-          type: string
+          $ref: "#/components/schemas/Id"
         count:
           type: integer
           minimum: 1
@@ -489,7 +493,7 @@ components:
       additionalProperties: false
       properties:
         plantId:
-          type: string
+          $ref: "#/components/schemas/Id"
         count:
           type: integer
           minimum: 1
@@ -522,14 +526,11 @@ components:
       additionalProperties: false
       properties:
         id:
-          type: string
-          example: log_001
+          $ref: "#/components/schemas/Id"
         userId:
-          type: string
-          example: u_123
+          $ref: "#/components/schemas/Id"
         aquariumId:
-          type: string
-          example: aq_777
+          $ref: "#/components/schemas/Id"
         aquariumName:
           type: string
           example: Moje pierwsze akwarium
@@ -608,14 +609,11 @@ components:
       additionalProperties: false
       properties:
         id:
-          type: string
-          example: c_001
+          $ref: "#/components/schemas/Id"
         userId:
-          type: string
-          example: u_123
+          $ref: "#/components/schemas/Id"
         friendId:
-          type: string
-          example: u_456
+          $ref: "#/components/schemas/Id"
         friendName:
           type: string
           example: Jan Kowalski
@@ -636,19 +634,15 @@ components:
       additionalProperties: false
       properties:
         id:
-          type: string
-          example: inv_001
+          $ref: "#/components/schemas/Id"
         senderId:
-          type: string
-          example: u_123
+          $ref: "#/components/schemas/Id"
         recipientEmail:
           type: string
           format: email
           example: anna.nowak@example.com
         recipientUserId:
-          type: string
-          nullable: true
-          example: u_789
+          $ref: "#/components/schemas/NullableId"
         status:
           $ref: "#/components/schemas/InvitationStatus"
         createdAt:
@@ -751,8 +745,7 @@ components:
       additionalProperties: false
       properties:
         aquariumId:
-          type: string
-          example: aq_777
+          $ref: "#/components/schemas/Id"
         fishCount:
           type: integer
           example: 1
@@ -793,13 +786,9 @@ components:
       additionalProperties: false
       properties:
         fishId:
-          type: string
-          nullable: true
-          example: fish_001
+          $ref: "#/components/schemas/NullableId"
         plantId:
-          type: string
-          nullable: true
-          example: plant_001
+          $ref: "#/components/schemas/NullableId"
         name:
           type: string
           example: Neon Innesa
@@ -816,13 +805,9 @@ components:
       additionalProperties: false
       properties:
         fishId:
-          type: string
-          nullable: true
-          example: fish_001
+          $ref: "#/components/schemas/NullableId"
         plantId:
-          type: string
-          nullable: true
-          example: plant_001
+          $ref: "#/components/schemas/NullableId"
         name:
           type: string
           example: Neon Innesa
@@ -989,8 +974,8 @@ paths:
           in: path
           required: true
           schema:
-            type: string
-          example: u_123
+            $ref: "#/components/schemas/Id"
+          example: 123
       responses:
         "200":
           description: User
@@ -1015,7 +1000,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            $ref: "#/components/schemas/Id"
       requestBody:
         required: true
         content:
@@ -1058,7 +1043,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            $ref: "#/components/schemas/Id"
       responses:
         "204":
           description: No Content
@@ -1145,52 +1130,8 @@ paths:
   /fish:
     get:
       tags: [Fish]
-      summary: List fish (with filters)
+      summary: List fish
       security: []
-      parameters:
-        - name: q
-          in: query
-          required: false
-          schema:
-            type: string
-          description: Name substring filter.
-        - name: waterType
-          in: query
-          required: false
-          schema:
-            $ref: "#/components/schemas/WaterType"
-        - name: temperament
-          in: query
-          required: false
-          schema:
-            type: string
-          example: spokojne
-        - name: tempMin
-          in: query
-          required: false
-          schema:
-            type: number
-          description: Minimum temperature (°C).
-        - name: tempMax
-          in: query
-          required: false
-          schema:
-            type: number
-          description: Maximum temperature (°C).
-        - name: limit
-          in: query
-          required: false
-          schema:
-            type: integer
-            minimum: 1
-            default: 50
-        - name: offset
-          in: query
-          required: false
-          schema:
-            type: integer
-            minimum: 0
-            default: 0
       responses:
         "200":
           description: Fish list
@@ -1243,8 +1184,8 @@ paths:
           in: path
           required: true
           schema:
-            type: string
-          example: fish_002
+            $ref: "#/components/schemas/Id"
+          example: 2
       responses:
         "200":
           description: Fish
@@ -1269,7 +1210,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            $ref: "#/components/schemas/Id"
       requestBody:
         required: true
         content:
@@ -1312,7 +1253,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            $ref: "#/components/schemas/Id"
       responses:
         "204":
           description: No Content
@@ -1338,45 +1279,8 @@ paths:
   /plants:
     get:
       tags: [Plants]
-      summary: List plants (with filters)
+      summary: List plants
       security: []
-      parameters:
-        - name: q
-          in: query
-          required: false
-          schema:
-            type: string
-          description: Name substring filter.
-        - name: biotope
-          in: query
-          required: false
-          schema:
-            type: string
-          example: Ameryka Północna
-        - name: tempMin
-          in: query
-          required: false
-          schema:
-            type: number
-        - name: tempMax
-          in: query
-          required: false
-          schema:
-            type: number
-        - name: limit
-          in: query
-          required: false
-          schema:
-            type: integer
-            minimum: 1
-            default: 50
-        - name: offset
-          in: query
-          required: false
-          schema:
-            type: integer
-            minimum: 0
-            default: 0
       responses:
         "200":
           description: Plants list
@@ -1429,8 +1333,8 @@ paths:
           in: path
           required: true
           schema:
-            type: string
-          example: plant_002
+            $ref: "#/components/schemas/Id"
+          example: 2
       responses:
         "200":
           description: Plant
@@ -1455,7 +1359,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            $ref: "#/components/schemas/Id"
       requestBody:
         required: true
         content:
@@ -1498,7 +1402,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            $ref: "#/components/schemas/Id"
       responses:
         "204":
           description: No Content
@@ -1585,8 +1489,8 @@ paths:
           in: path
           required: true
           schema:
-            type: string
-          example: aq_901
+            $ref: "#/components/schemas/Id"
+          example: 901
       responses:
         "200":
           description: Aquarium
@@ -1617,7 +1521,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            $ref: "#/components/schemas/Id"
       requestBody:
         required: true
         content:
@@ -1660,7 +1564,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            $ref: "#/components/schemas/Id"
       responses:
         "204":
           description: No Content
@@ -1688,7 +1592,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            $ref: "#/components/schemas/Id"
       requestBody:
         required: true
         content:
@@ -1736,7 +1640,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            $ref: "#/components/schemas/Id"
       requestBody:
         required: true
         content:
@@ -1744,7 +1648,7 @@ paths:
             schema:
               $ref: "#/components/schemas/AddFishToAquariumRequest"
             example:
-              fishId: fish_001
+              fishId: 1
               count: 5
       responses:
         "200":
@@ -1783,12 +1687,12 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            $ref: "#/components/schemas/Id"
         - name: fishId
           in: path
           required: true
           schema:
-            type: string
+            $ref: "#/components/schemas/Id"
       requestBody:
         required: true
         content:
@@ -1828,12 +1732,12 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            $ref: "#/components/schemas/Id"
         - name: fishId
           in: path
           required: true
           schema:
-            type: string
+            $ref: "#/components/schemas/Id"
         - name: count
           in: query
           required: false
@@ -1872,7 +1776,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            $ref: "#/components/schemas/Id"
       requestBody:
         required: true
         content:
@@ -1880,7 +1784,7 @@ paths:
             schema:
               $ref: "#/components/schemas/AddPlantToAquariumRequest"
             example:
-              plantId: plant_001
+              plantId: 1
               count: 3
       responses:
         "200":
@@ -1913,12 +1817,12 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            $ref: "#/components/schemas/Id"
         - name: plantId
           in: path
           required: true
           schema:
-            type: string
+            $ref: "#/components/schemas/Id"
       requestBody:
         required: true
         content:
@@ -1958,12 +1862,12 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            $ref: "#/components/schemas/Id"
         - name: plantId
           in: path
           required: true
           schema:
-            type: string
+            $ref: "#/components/schemas/Id"
         - name: count
           in: query
           required: false
@@ -2001,7 +1905,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            $ref: "#/components/schemas/Id"
       responses:
         "200":
           description: Status only
@@ -2058,7 +1962,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            $ref: "#/components/schemas/Id"
       responses:
         "200":
           description: Stats
@@ -2095,7 +1999,7 @@ paths:
           in: query
           required: false
           schema:
-            type: string
+            $ref: "#/components/schemas/Id"
         - name: sort
           in: query
           required: false
@@ -2199,8 +2103,8 @@ paths:
           in: path
           required: true
           schema:
-            type: string
-          example: inv_001
+            $ref: "#/components/schemas/Id"
+          example: 1
       responses:
         "200":
           description: Accepted invitation + created contact
@@ -2232,7 +2136,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            $ref: "#/components/schemas/Id"
       responses:
         "200":
           description: Rejected invitation
@@ -2269,8 +2173,8 @@ paths:
           in: path
           required: true
           schema:
-            type: string
-          example: c_001
+            $ref: "#/components/schemas/Id"
+          example: 1
       responses:
         "204":
           description: No Content
