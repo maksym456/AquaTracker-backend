@@ -1,14 +1,12 @@
 openapi: 3.0.0
 info:
   title: AquaTracker API v1
-  description: >
-    AquaTracker REST API. All request/response bodies are application/json.
-    Base URL: http://localhost:3001/api/v1/
+  description: |
+    AquaTracker REST API. All request/response bodies are application/json. Base URL: http://localhost:3001/api/v1/
   version: 1.0.0
 servers:
   - url: http://localhost:3001/api/v1
     description: Local dev
-
 tags:
   - name: Users
   - name: Settings
@@ -18,26 +16,17 @@ tags:
   - name: Statistics
   - name: Logs
   - name: Contacts
-
 components:
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-
   schemas:
     Id:
       type: integer
       format: int64
       example: 123
-
     NullableId:
       type: integer
       format: int64
       nullable: true
       example: null
-
     ErrorResponse:
       type: object
       additionalProperties: false
@@ -58,21 +47,27 @@ components:
           additionalProperties: true
           example:
             fishId: 1
-            conflictingFishIds: [2]
-      required: [error, message]
-
+            conflictingFishIds:
+              - 2
+      required:
+        - error
+        - message
     Language:
       type: string
-      enum: [pl, en]
-
+      enum:
+        - pl
+        - en
     Theme:
       type: string
-      enum: [light, dark]
-
+      enum:
+        - light
+        - dark
     WaterType:
       type: string
-      enum: ["Słodkowodna", "Słonawowodna", "Słonowodna"]
-
+      enum:
+        - Słodkowodna
+        - Słonawowodna
+        - Słonowodna
     UserSettings:
       type: object
       additionalProperties: false
@@ -84,8 +79,10 @@ components:
         dataSource:
           type: string
           example: production
-      required: [language, theme, dataSource]
-
+      required:
+        - language
+        - theme
+        - dataSource
     User:
       type: object
       additionalProperties: false
@@ -102,11 +99,15 @@ components:
         createdAt:
           type: string
           format: date-time
-          example: "2025-10-27T12:00:00Z"
+          example: 2025-10-27T12:00:00Z
         settings:
           $ref: "#/components/schemas/UserSettings"
-      required: [id, username, email, createdAt, settings]
-
+      required:
+        - id
+        - username
+        - email
+        - createdAt
+        - settings
     UserCreateRequest:
       type: object
       additionalProperties: false
@@ -121,11 +122,13 @@ components:
         password:
           type: string
           format: password
-          example: "StrongPassword123!"
+          example: StrongPassword123!
         settings:
           $ref: "#/components/schemas/UserSettings"
-      required: [username, email, password]
-
+      required:
+        - username
+        - email
+        - password
     UserUpdateRequest:
       type: object
       additionalProperties: false
@@ -137,7 +140,6 @@ components:
           format: email
         settings:
           $ref: "#/components/schemas/UserSettings"
-
     Fish:
       type: object
       additionalProperties: false
@@ -151,17 +153,17 @@ components:
           $ref: "#/components/schemas/WaterType"
         temperature:
           type: string
-          description: Temperature range string, e.g. "22-26"
-          example: "22-26"
+          description: "Temperature range string, e.g. \"22-26\""
+          example: 22-26
         biotope:
           type: string
           example: Ameryka Południowa
         ph:
           type: string
-          example: "6.5-7.5"
+          example: 6.5-7.5
         hardnessDGH:
           type: string
-          example: "1-12"
+          example: 1-12
         temperament:
           type: string
           example: spokojne
@@ -187,7 +189,6 @@ components:
         - minShoalSize
         - lifeSpan
         - iconName
-
     FishCreateRequest:
       type: object
       additionalProperties: false
@@ -224,7 +225,6 @@ components:
         - minShoalSize
         - lifeSpan
         - iconName
-
     FishUpdateRequest:
       type: object
       additionalProperties: false
@@ -250,7 +250,6 @@ components:
           type: string
         iconName:
           type: string
-
     Plant:
       type: object
       additionalProperties: false
@@ -262,21 +261,27 @@ components:
           example: Moczarka
         temperature:
           type: string
-          example: "12-20"
+          example: 12-20
         biotope:
           type: string
           example: Ameryka Północna
         ph:
           type: string
-          example: "6.0-8.0"
+          example: 6.0-8.0
         hardnessDGH:
           type: string
-          example: "5-20"
+          example: 5-20
         iconName:
           type: string
           example: moczarka.png
-      required: [id, name, temperature, biotope, ph, hardnessDGH, iconName]
-
+      required:
+        - id
+        - name
+        - temperature
+        - biotope
+        - ph
+        - hardnessDGH
+        - iconName
     PlantCreateRequest:
       type: object
       additionalProperties: false
@@ -293,8 +298,13 @@ components:
           type: string
         iconName:
           type: string
-      required: [name, temperature, biotope, ph, hardnessDGH, iconName]
-
+      required:
+        - name
+        - temperature
+        - biotope
+        - ph
+        - hardnessDGH
+        - iconName
     PlantUpdateRequest:
       type: object
       additionalProperties: false
@@ -311,7 +321,6 @@ components:
           type: string
         iconName:
           type: string
-
     AquariumFishItem:
       type: object
       additionalProperties: false
@@ -322,8 +331,9 @@ components:
           type: integer
           minimum: 0
           example: 6
-      required: [fishId, count]
-
+      required:
+        - fishId
+        - count
     AquariumPlantItem:
       type: object
       additionalProperties: false
@@ -334,8 +344,9 @@ components:
           type: integer
           minimum: 0
           example: 2
-      required: [plantId, count]
-
+      required:
+        - plantId
+        - count
     StatusIssue:
       type: object
       additionalProperties: false
@@ -346,15 +357,19 @@ components:
         message:
           type: string
           example: Temperatura 30°C poza zakresem dla Neon Innesa (22-26).
-      required: [type, message]
-
+      required:
+        - type
+        - message
     AquariumStatus:
       type: object
       additionalProperties: false
       properties:
         level:
           type: string
-          enum: [OK, WARNING, ERROR]
+          enum:
+            - OK
+            - WARNING
+            - ERROR
           example: WARNING
         issues:
           type: array
@@ -363,9 +378,11 @@ components:
         lastCheckedAt:
           type: string
           format: date-time
-          example: "2025-01-25T11:00:00Z"
-      required: [level, issues, lastCheckedAt]
-
+          example: 2025-01-25T11:00:00Z
+      required:
+        - level
+        - issues
+        - lastCheckedAt
     Aquarium:
       type: object
       additionalProperties: false
@@ -409,7 +426,7 @@ components:
         createdAt:
           type: string
           format: date-time
-          example: "2025-01-20T09:00:00Z"
+          example: 2025-01-20T09:00:00Z
       required:
         - id
         - ownerId
@@ -423,7 +440,6 @@ components:
         - plants
         - status
         - createdAt
-
     AquariumCreateRequest:
       type: object
       additionalProperties: false
@@ -452,11 +468,17 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AquariumPlantItem"
-      required: [name, volumeLiters, waterType, temperatureC, ph, hardnessDGH, fish, plants]
-
+      required:
+        - name
+        - volumeLiters
+        - waterType
+        - temperatureC
+        - ph
+        - hardnessDGH
+        - fish
+        - plants
     AquariumUpdateRequest:
       $ref: "#/components/schemas/AquariumCreateRequest"
-
     AquariumParametersUpdateRequest:
       type: object
       additionalProperties: false
@@ -467,7 +489,6 @@ components:
           type: number
         hardnessDGH:
           type: number
-
     AddFishToAquariumRequest:
       type: object
       additionalProperties: false
@@ -477,8 +498,9 @@ components:
         count:
           type: integer
           minimum: 1
-      required: [fishId, count]
-
+      required:
+        - fishId
+        - count
     UpdateFishCountRequest:
       type: object
       additionalProperties: false
@@ -486,8 +508,8 @@ components:
         count:
           type: integer
           minimum: 0
-      required: [count]
-
+      required:
+        - count
     AddPlantToAquariumRequest:
       type: object
       additionalProperties: false
@@ -497,8 +519,9 @@ components:
         count:
           type: integer
           minimum: 1
-      required: [plantId, count]
-
+      required:
+        - plantId
+        - count
     UpdatePlantCountRequest:
       type: object
       additionalProperties: false
@@ -506,8 +529,8 @@ components:
         count:
           type: integer
           minimum: 0
-      required: [count]
-
+      required:
+        - count
     LogActionType:
       type: string
       enum:
@@ -520,7 +543,6 @@ components:
         - PLANT_UPDATED
         - PLANT_REMOVED
         - PARAM_CHANGED
-
     LogEntry:
       type: object
       additionalProperties: false
@@ -545,7 +567,7 @@ components:
         createdAt:
           type: string
           format: date-time
-          example: "2025-01-23T14:30:00Z"
+          example: 2025-01-23T14:30:00Z
         metadata:
           type: object
           additionalProperties: true
@@ -553,8 +575,16 @@ components:
             parameter: hardnessDGH
             oldValue: 10
             newValue: 12
-      required: [id, userId, aquariumId, aquariumName, actionType, title, message, createdAt, metadata]
-
+      required:
+        - id
+        - userId
+        - aquariumId
+        - aquariumName
+        - actionType
+        - title
+        - message
+        - createdAt
+        - metadata
     AquariumAndLogResponse:
       type: object
       additionalProperties: false
@@ -563,8 +593,9 @@ components:
           $ref: "#/components/schemas/Aquarium"
         logEntry:
           $ref: "#/components/schemas/LogEntry"
-      required: [aquarium, logEntry]
-
+      required:
+        - aquarium
+        - logEntry
     Settings:
       type: object
       additionalProperties: false
@@ -580,8 +611,11 @@ components:
         dataSource:
           type: string
           example: production
-      required: [language, theme, sessionLengthMinutes, dataSource]
-
+      required:
+        - language
+        - theme
+        - sessionLengthMinutes
+        - dataSource
     SettingsUpdateRequest:
       type: object
       additionalProperties: false
@@ -595,15 +629,17 @@ components:
           minimum: 1
         dataSource:
           type: string
-
     InvitationStatus:
       type: string
-      enum: [PENDING, ACCEPTED, REJECTED]
-
+      enum:
+        - PENDING
+        - ACCEPTED
+        - REJECTED
     ContactStatus:
       type: string
-      enum: [PENDING, ACCEPTED]
-
+      enum:
+        - PENDING
+        - ACCEPTED
     Contact:
       type: object
       additionalProperties: false
@@ -626,9 +662,15 @@ components:
         createdAt:
           type: string
           format: date-time
-          example: "2025-01-20T10:00:00Z"
-      required: [id, userId, friendId, friendName, friendEmail, status, createdAt]
-
+          example: 2025-01-20T10:00:00Z
+      required:
+        - id
+        - userId
+        - friendId
+        - friendName
+        - friendEmail
+        - status
+        - createdAt
     Invitation:
       type: object
       additionalProperties: false
@@ -648,14 +690,19 @@ components:
         createdAt:
           type: string
           format: date-time
-          example: "2025-01-21T09:00:00Z"
+          example: 2025-01-21T09:00:00Z
         respondedAt:
           type: string
           format: date-time
           nullable: true
           example: null
-      required: [id, senderId, recipientEmail, status, createdAt, respondedAt]
-
+      required:
+        - id
+        - senderId
+        - recipientEmail
+        - status
+        - createdAt
+        - respondedAt
     ContactsOverview:
       type: object
       additionalProperties: false
@@ -668,8 +715,9 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Invitation"
-      required: [friends, invitations]
-
+      required:
+        - friends
+        - invitations
     SendInvitationRequest:
       type: object
       additionalProperties: false
@@ -678,16 +726,16 @@ components:
           type: string
           format: email
           example: anna.nowak@example.com
-      required: [email]
-
+      required:
+        - email
     SendInvitationResponse:
       type: object
       additionalProperties: false
       properties:
         invitation:
           $ref: "#/components/schemas/Invitation"
-      required: [invitation]
-
+      required:
+        - invitation
     AcceptInvitationResponse:
       type: object
       additionalProperties: false
@@ -696,8 +744,9 @@ components:
           $ref: "#/components/schemas/Invitation"
         contact:
           $ref: "#/components/schemas/Contact"
-      required: [invitation, contact]
-
+      required:
+        - invitation
+        - contact
     StatsGlobal:
       type: object
       additionalProperties: false
@@ -739,7 +788,6 @@ components:
         - plantDistribution
         - mostCommonFish
         - mostCommonPlant
-
     StatsSingleAquarium:
       type: object
       additionalProperties: false
@@ -780,7 +828,6 @@ components:
         - plantDistribution
         - mostCommonFish
         - mostCommonPlant
-
     StatsDistributionItem:
       type: object
       additionalProperties: false
@@ -798,8 +845,10 @@ components:
         percentage:
           type: number
           example: 100.0
-      required: [name, count, percentage]
-
+      required:
+        - name
+        - count
+        - percentage
     StatsMostCommon:
       type: object
       additionalProperties: false
@@ -817,42 +866,44 @@ components:
         percentage:
           type: number
           example: 100.0
-      required: [name, count, percentage]
-
+      required:
+        - name
+        - count
+        - percentage
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
 paths:
   /users:
     get:
-      tags: [Users]
       summary: List users (optionally filter by email)
       description: |
         Lists users. Intended for admin/internal usage.
         Use `email` to fetch user by email as a convenience filter.
-      security:
-        - bearerAuth: []
+      tags:
+        - Users
       parameters:
         - name: email
           in: query
-          required: false
           schema:
             type: string
             format: email
           description: Exact email match.
         - name: q
           in: query
-          required: false
           schema:
             type: string
           description: Partial match on username/email (implementation-defined).
         - name: limit
           in: query
-          required: false
           schema:
             type: integer
             minimum: 1
             default: 50
         - name: offset
           in: query
-          required: false
           schema:
             type: integer
             minimum: 0
@@ -878,11 +929,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
+      security:
+        - bearerAuth: []
     post:
-      tags: [Users]
       summary: Create user
       description: Creates a new user account.
+      tags:
+        - Users
       requestBody:
         required: true
         content:
@@ -908,13 +961,11 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
   /users/by-email:
     get:
-      tags: [Users]
       summary: Get user by email
-      security:
-        - bearerAuth: []
+      tags:
+        - Users
       parameters:
         - name: email
           in: query
@@ -942,13 +993,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
-  /users/me:
-    get:
-      tags: [Users]
-      summary: Get current user
       security:
         - bearerAuth: []
+  /users/me:
+    get:
+      summary: Get current user
+      tags:
+        - Users
       responses:
         "200":
           description: Current user
@@ -962,13 +1013,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
-  /users/{userId}:
-    get:
-      tags: [Users]
-      summary: Get user by id
       security:
         - bearerAuth: []
+  /users/{userId}:
+    get:
+      summary: Get user by id
+      tags:
+        - Users
       parameters:
         - name: userId
           in: path
@@ -989,12 +1040,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
-    patch:
-      tags: [Users]
-      summary: Update user (partial)
       security:
         - bearerAuth: []
+    patch:
+      summary: Update user (partial)
+      tags:
+        - Users
       parameters:
         - name: userId
           in: path
@@ -1032,12 +1083,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
-    delete:
-      tags: [Users]
-      summary: Delete user
       security:
         - bearerAuth: []
+    delete:
+      summary: Delete user
+      tags:
+        - Users
       parameters:
         - name: userId
           in: path
@@ -1065,13 +1116,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
-  /settings:
-    get:
-      tags: [Settings]
-      summary: Get settings
       security:
         - bearerAuth: []
+  /settings:
+    get:
+      summary: Get settings
+      tags:
+        - Settings
       responses:
         "200":
           description: Settings
@@ -1090,12 +1141,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
-    patch:
-      tags: [Settings]
-      summary: Update settings (partial)
       security:
         - bearerAuth: []
+    patch:
+      summary: Update settings (partial)
+      tags:
+        - Settings
       requestBody:
         required: true
         content:
@@ -1126,12 +1177,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
+      security:
+        - bearerAuth: []
   /fish:
     get:
-      tags: [Fish]
       summary: List fish
-      security: []
+      tags:
+        - Fish
       responses:
         "200":
           description: Fish list
@@ -1141,13 +1193,11 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Fish"
-
     post:
-      tags: [Fish]
       summary: Add fish
       description: Creates a fish entry (admin/internal).
-      security:
-        - bearerAuth: []
+      tags:
+        - Fish
       requestBody:
         required: true
         content:
@@ -1173,12 +1223,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
+      security:
+        - bearerAuth: []
   /fish/{fishId}:
     get:
-      tags: [Fish]
       summary: Get fish by id
-      security: []
+      tags:
+        - Fish
       parameters:
         - name: fishId
           in: path
@@ -1199,12 +1250,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
     patch:
-      tags: [Fish]
       summary: Update fish (partial)
-      security:
-        - bearerAuth: []
+      tags:
+        - Fish
       parameters:
         - name: fishId
           in: path
@@ -1242,12 +1291,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
-    delete:
-      tags: [Fish]
-      summary: Delete fish
       security:
         - bearerAuth: []
+    delete:
+      summary: Delete fish
+      tags:
+        - Fish
       parameters:
         - name: fishId
           in: path
@@ -1275,12 +1324,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
+      security:
+        - bearerAuth: []
   /plants:
     get:
-      tags: [Plants]
       summary: List plants
-      security: []
+      tags:
+        - Plants
       responses:
         "200":
           description: Plants list
@@ -1290,13 +1340,11 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Plant"
-
     post:
-      tags: [Plants]
       summary: Add plant
       description: Creates a plant entry (admin/internal).
-      security:
-        - bearerAuth: []
+      tags:
+        - Plants
       requestBody:
         required: true
         content:
@@ -1322,12 +1370,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
+      security:
+        - bearerAuth: []
   /plants/{plantId}:
     get:
-      tags: [Plants]
       summary: Get plant by id
-      security: []
+      tags:
+        - Plants
       parameters:
         - name: plantId
           in: path
@@ -1348,12 +1397,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
     patch:
-      tags: [Plants]
       summary: Update plant (partial)
-      security:
-        - bearerAuth: []
+      tags:
+        - Plants
       parameters:
         - name: plantId
           in: path
@@ -1391,12 +1438,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
-    delete:
-      tags: [Plants]
-      summary: Delete plant
       security:
         - bearerAuth: []
+    delete:
+      summary: Delete plant
+      tags:
+        - Plants
       parameters:
         - name: plantId
           in: path
@@ -1424,13 +1471,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
-  /aquariums:
-    get:
-      tags: [Aquariums]
-      summary: List my aquariums
       security:
         - bearerAuth: []
+  /aquariums:
+    get:
+      summary: List my aquariums
+      tags:
+        - Aquariums
       responses:
         "200":
           description: Aquariums list
@@ -1446,12 +1493,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
-    post:
-      tags: [Aquariums]
-      summary: Create aquarium
       security:
         - bearerAuth: []
+    post:
+      summary: Create aquarium
+      tags:
+        - Aquariums
       requestBody:
         required: true
         content:
@@ -1477,13 +1524,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
-  /aquariums/{aquariumId}:
-    get:
-      tags: [Aquariums]
-      summary: Get aquarium by id
       security:
         - bearerAuth: []
+  /aquariums/{aquariumId}:
+    get:
+      summary: Get aquarium by id
+      tags:
+        - Aquariums
       parameters:
         - name: aquariumId
           in: path
@@ -1510,12 +1557,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
-    put:
-      tags: [Aquariums]
-      summary: Update aquarium (full)
       security:
         - bearerAuth: []
+    put:
+      summary: Update aquarium (full)
+      tags:
+        - Aquariums
       parameters:
         - name: aquariumId
           in: path
@@ -1553,12 +1600,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
-    delete:
-      tags: [Aquariums]
-      summary: Delete aquarium
       security:
         - bearerAuth: []
+    delete:
+      summary: Delete aquarium
+      tags:
+        - Aquariums
       parameters:
         - name: aquariumId
           in: path
@@ -1580,13 +1627,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
-  /aquariums/{aquariumId}/parameters:
-    patch:
-      tags: [Aquariums]
-      summary: Update aquarium parameters (partial)
       security:
         - bearerAuth: []
+  /aquariums/{aquariumId}/parameters:
+    patch:
+      summary: Update aquarium parameters (partial)
+      tags:
+        - Aquariums
       parameters:
         - name: aquariumId
           in: path
@@ -1628,13 +1675,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
-  /aquariums/{aquariumId}/fish:
-    post:
-      tags: [Aquariums]
-      summary: Add fish to aquarium
       security:
         - bearerAuth: []
+  /aquariums/{aquariumId}/fish:
+    post:
+      summary: Add fish to aquarium
+      tags:
+        - Aquariums
       parameters:
         - name: aquariumId
           in: path
@@ -1675,13 +1722,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
-  /aquariums/{aquariumId}/fish/{fishId}:
-    patch:
-      tags: [Aquariums]
-      summary: Update fish count in aquarium
       security:
         - bearerAuth: []
+  /aquariums/{aquariumId}/fish/{fishId}:
+    patch:
+      summary: Update fish count in aquarium
+      tags:
+        - Aquariums
       parameters:
         - name: aquariumId
           in: path
@@ -1720,13 +1767,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
-    delete:
-      tags: [Aquariums]
-      summary: Remove fish from aquarium
-      description: Optionally pass `count` to remove a specific amount; if omitted, removes the entry.
       security:
         - bearerAuth: []
+    delete:
+      summary: Remove fish from aquarium
+      description: "Optionally pass `count` to remove a specific amount; if omitted, removes the entry."
+      tags:
+        - Aquariums
       parameters:
         - name: aquariumId
           in: path
@@ -1740,11 +1787,10 @@ paths:
             $ref: "#/components/schemas/Id"
         - name: count
           in: query
-          required: false
           schema:
             type: integer
             minimum: 1
-          description: If present, decreases fish count by this value.
+          description: "If present, decreases fish count by this value."
       responses:
         "200":
           description: Aquarium + log entry
@@ -1764,13 +1810,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
-  /aquariums/{aquariumId}/plants:
-    post:
-      tags: [Aquariums]
-      summary: Add plant to aquarium
       security:
         - bearerAuth: []
+  /aquariums/{aquariumId}/plants:
+    post:
+      summary: Add plant to aquarium
+      tags:
+        - Aquariums
       parameters:
         - name: aquariumId
           in: path
@@ -1805,13 +1851,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
-  /aquariums/{aquariumId}/plants/{plantId}:
-    patch:
-      tags: [Aquariums]
-      summary: Update plant count in aquarium
       security:
         - bearerAuth: []
+  /aquariums/{aquariumId}/plants/{plantId}:
+    patch:
+      summary: Update plant count in aquarium
+      tags:
+        - Aquariums
       parameters:
         - name: aquariumId
           in: path
@@ -1850,13 +1896,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
-    delete:
-      tags: [Aquariums]
-      summary: Remove plant from aquarium
-      description: Optionally pass `count` to remove a specific amount; if omitted, removes the entry.
       security:
         - bearerAuth: []
+    delete:
+      summary: Remove plant from aquarium
+      description: "Optionally pass `count` to remove a specific amount; if omitted, removes the entry."
+      tags:
+        - Aquariums
       parameters:
         - name: aquariumId
           in: path
@@ -1870,7 +1916,6 @@ paths:
             $ref: "#/components/schemas/Id"
         - name: count
           in: query
-          required: false
           schema:
             type: integer
             minimum: 1
@@ -1893,13 +1938,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
-  /aquariums/{aquariumId}/status/recalculate:
-    post:
-      tags: [Aquariums]
-      summary: Recalculate aquarium status
       security:
         - bearerAuth: []
+  /aquariums/{aquariumId}/status/recalculate:
+    post:
+      summary: Recalculate aquarium status
+      tags:
+        - Aquariums
       parameters:
         - name: aquariumId
           in: path
@@ -1917,7 +1962,8 @@ paths:
                 properties:
                   status:
                     $ref: "#/components/schemas/AquariumStatus"
-                required: [status]
+                required:
+                  - status
         "401":
           description: Unauthorized
           content:
@@ -1930,13 +1976,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
-  /aquariums/stats:
-    get:
-      tags: [Statistics]
-      summary: Global stats (all my aquariums)
       security:
         - bearerAuth: []
+  /aquariums/stats:
+    get:
+      summary: Global stats (all my aquariums)
+      tags:
+        - Statistics
       responses:
         "200":
           description: Stats
@@ -1950,13 +1996,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
-  /aquariums/{aquariumId}/stats:
-    get:
-      tags: [Statistics]
-      summary: Stats for a single aquarium
       security:
         - bearerAuth: []
+  /aquariums/{aquariumId}/stats:
+    get:
+      summary: Stats for a single aquarium
+      tags:
+        - Statistics
       parameters:
         - name: aquariumId
           in: path
@@ -1982,41 +2028,38 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
-  /logs:
-    get:
-      tags: [Logs]
-      summary: List logs for current user
       security:
         - bearerAuth: []
+  /logs:
+    get:
+      summary: List logs for current user
+      tags:
+        - Logs
       parameters:
         - name: actionType
           in: query
-          required: false
           schema:
             $ref: "#/components/schemas/LogActionType"
         - name: aquariumId
           in: query
-          required: false
           schema:
             $ref: "#/components/schemas/Id"
         - name: sort
           in: query
-          required: false
           schema:
             type: string
-            enum: [asc, desc]
+            enum:
+              - asc
+              - desc
             default: desc
         - name: limit
           in: query
-          required: false
           schema:
             type: integer
             minimum: 1
             default: 50
         - name: offset
           in: query
-          required: false
           schema:
             type: integer
             minimum: 0
@@ -2036,13 +2079,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
-  /contacts:
-    get:
-      tags: [Contacts]
-      summary: Get contacts and invitations
       security:
         - bearerAuth: []
+  /contacts:
+    get:
+      summary: Get contacts and invitations
+      tags:
+        - Contacts
       responses:
         "200":
           description: Contacts overview
@@ -2056,13 +2099,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
-  /contacts/invitations:
-    post:
-      tags: [Contacts]
-      summary: Send invitation by email
       security:
         - bearerAuth: []
+  /contacts/invitations:
+    post:
+      summary: Send invitation by email
+      tags:
+        - Contacts
       requestBody:
         required: true
         content:
@@ -2091,13 +2134,13 @@ paths:
               example:
                 error: UserNotFound
                 message: Użytkownik o podanym adresie e-mail nie istnieje.
-
-  /contacts/invitations/{invitationId}/accept:
-    post:
-      tags: [Contacts]
-      summary: Accept invitation
       security:
         - bearerAuth: []
+  /contacts/invitations/{invitationId}/accept:
+    post:
+      summary: Accept invitation
+      tags:
+        - Contacts
       parameters:
         - name: invitationId
           in: path
@@ -2124,13 +2167,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
-  /contacts/invitations/{invitationId}/reject:
-    post:
-      tags: [Contacts]
-      summary: Reject invitation
       security:
         - bearerAuth: []
+  /contacts/invitations/{invitationId}/reject:
+    post:
+      summary: Reject invitation
+      tags:
+        - Contacts
       parameters:
         - name: invitationId
           in: path
@@ -2148,7 +2191,8 @@ paths:
                 properties:
                   invitation:
                     $ref: "#/components/schemas/Invitation"
-                required: [invitation]
+                required:
+                  - invitation
         "401":
           description: Unauthorized
           content:
@@ -2161,13 +2205,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
-  /contacts/{contactId}:
-    delete:
-      tags: [Contacts]
-      summary: Remove friend
       security:
         - bearerAuth: []
+  /contacts/{userId}/{contactId}:
+    delete:
+      summary: Remove friend
+      tags:
+        - Contacts
       parameters:
         - name: contactId
           in: path
@@ -2190,3 +2234,34 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+      security:
+        - bearerAuth: []
+  /contacts/{userId}:
+    get:
+      summary: List contacts for current user
+      tags:
+        - Contacts
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Id"
+          example: 1
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      security:
+        - bearerAuth: []

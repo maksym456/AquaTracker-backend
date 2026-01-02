@@ -12,6 +12,7 @@ import com.aquatracker.user.UserRepository;
 import com.aquatracker.logs.LogEntry;
 import com.aquatracker.logs.LogEntryRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Profile("!dev")
 @RestController
 @RequestMapping("/api/v1/aquariums")
 public class AquariumController {

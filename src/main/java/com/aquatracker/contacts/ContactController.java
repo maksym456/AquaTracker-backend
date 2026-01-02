@@ -2,12 +2,14 @@ package com.aquatracker.contacts;
 
 import com.aquatracker.InvitationRepository;
 import com.aquatracker.user.UserRepository;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+@Profile("!dev")
 @RestController
 @RequestMapping("/api/v1/contacts")
 public class ContactController {
