@@ -80,5 +80,29 @@ public class IdMapper {
     public static Long fromInvitationId(String invitationId) {
         return fromApiId(invitationId);
     }
+
+    public static String toHistoryId(Long id) {
+        return toApiId("hist", id);
+    }
+
+    public static Long fromHistoryId(String historyId) {
+        return fromApiId(historyId);
+    }
+
+    public static String toShareId(Long id) {
+        return toApiId("share", id);
+    }
+
+    public static Long fromShareId(String shareId) {
+        return fromApiId(shareId);
+    }
+
+    public static String toNotificationId(Long id) {
+        return toApiId("notif", id);
+    }
+
+    public static Long fromNotificationId(String notificationId) {
+        return fromApiId(notificationId);
+    }
 }
 

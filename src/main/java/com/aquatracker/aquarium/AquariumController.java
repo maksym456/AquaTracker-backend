@@ -11,6 +11,8 @@ import com.aquatracker.user.User;
 import com.aquatracker.user.UserRepository;
 import com.aquatracker.logs.LogEntry;
 import com.aquatracker.logs.LogEntryRepository;
+import com.aquatracker.history.AquariumParameterHistory;
+import com.aquatracker.history.AquariumParameterHistoryRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +42,7 @@ public class AquariumController {
     private final AquariumPlantRepository aquariumPlantRepository;
     private final AquariumValidationService validationService;
     private final LogEntryRepository logEntryRepository;
+    private final AquariumParameterHistoryRepository parameterHistoryRepository;
 
     public AquariumController(AquariumRepository aquariumRepository,
                              FishSpeciesRepository fishRepository,
@@ -48,7 +51,8 @@ public class AquariumController {
                              AquariumFishRepository aquariumFishRepository,
                              AquariumPlantRepository aquariumPlantRepository,
                              AquariumValidationService validationService,
-                             LogEntryRepository logEntryRepository) {
+                             LogEntryRepository logEntryRepository,
+                             AquariumParameterHistoryRepository parameterHistoryRepository) {
         this.aquariumRepository = aquariumRepository;
         this.fishRepository = fishRepository;
         this.plantRepository = plantRepository;
@@ -57,6 +61,7 @@ public class AquariumController {
         this.aquariumPlantRepository = aquariumPlantRepository;
         this.validationService = validationService;
         this.logEntryRepository = logEntryRepository;
+        this.parameterHistoryRepository = parameterHistoryRepository;
     }
     
     private User getOrCreateDefaultUser() {
@@ -104,6 +109,14 @@ public class AquariumController {
             dto.put("metadata", Map.of());
         }
         return dto;
+    }
+
+    private void saveParameterHistory(Aquarium aquarium, User user, String parameterName, String oldValue, String newValue, String description) {
+        if (oldValue != null && newValue != null && !oldValue.equals(newValue)) {
+            AquariumParameterHistory history = new AquariumParameterHistory(aquarium, user, parameterName, oldValue, newValue);
+            history.setDescription(description);
+            parameterHistoryRepository.save(history);
+        }
     }
 
     @GetMapping
@@ -262,40 +275,53 @@ public class AquariumController {
             }
             return aquariumRepository.findById(aquariumId)
                     .map(aquarium -> {
+                        User user = aquarium.getOwner() != null ? aquarium.getOwner() : getOrCreateDefaultUser();
+                        
                         if (request.getName() != null && !request.getName().trim().isEmpty()) {
+                            String oldName = aquarium.getName();
                             aquarium.setName(request.getName());
-                        }
-                        if (request.getWaterType() != null) {
-                            aquarium.setWaterType(request.getWaterType());
-                        }
-                        // Mapowanie temperature
-                        Double temp = request.getTemperature() != null ? request.getTemperature() : request.getTemperatureC();
-                        if (temp != null) {
-                            aquarium.setTemperatureC(temp);
+                            saveParameterHistory(aquarium, user, "name", oldName, request.getName(), "Zmiana nazwy akwarium");
                         }
                         
                         // Mapowanie waterType
                         String waterType = request.getWaterType();
                         if (waterType != null) {
+                            String oldWaterType = aquarium.getWaterType();
                             if (waterType.equals("freshwater")) {
                                 waterType = "Słodkowodna";
                             } else if (waterType.equals("saltwater")) {
                                 waterType = "Słonowodna";
                             }
                             aquarium.setWaterType(waterType);
+                            saveParameterHistory(aquarium, user, "water_type", oldWaterType, waterType, "Zmiana typu wody");
+                        }
+                        
+                        // Mapowanie temperature
+                        Double temp = request.getTemperature() != null ? request.getTemperature() : request.getTemperatureC();
+                        if (temp != null) {
+                            String oldTemp = String.valueOf(aquarium.getTemperatureC());
+                            aquarium.setTemperatureC(temp);
+                            saveParameterHistory(aquarium, user, "temperature", oldTemp, String.valueOf(temp), "Zmiana temperatury");
                         }
                         
                         if (request.getBiotope() != null) {
+                            String oldBiotope = aquarium.getBiotope();
                             aquarium.setBiotope(request.getBiotope());
+                            saveParameterHistory(aquarium, user, "biotope", oldBiotope, request.getBiotope(), "Zmiana biotopu");
                         }
+                        
                         if (request.getPh() != null) {
+                            String oldPh = aquarium.getPh() != null ? String.valueOf(aquarium.getPh()) : null;
                             aquarium.setPh(request.getPh());
+                            saveParameterHistory(aquarium, user, "ph", oldPh, String.valueOf(request.getPh()), "Zmiana pH");
                         }
                         
                         // Mapowanie hardness
                         Integer hardness = request.getHardness() != null ? request.getHardness() : request.getHardnessDGH();
                         if (hardness != null) {
+                            String oldHardness = aquarium.getHardnessDGH() != null ? String.valueOf(aquarium.getHardnessDGH()) : null;
                             aquarium.setHardnessDGH(hardness);
+                            saveParameterHistory(aquarium, user, "hardness", oldHardness, String.valueOf(hardness), "Zmiana twardości wody");
                         }
                         
                         if (request.getDescription() != null) {
@@ -305,7 +331,9 @@ public class AquariumController {
                         // Mapowanie volume
                         Integer volume = request.getVolume() != null ? request.getVolume() : request.getVolumeLiters();
                         if (volume != null) {
+                            String oldVolume = String.valueOf(aquarium.getVolumeLiters());
                             aquarium.setVolumeLiters(volume);
+                            saveParameterHistory(aquarium, user, "volume", oldVolume, String.valueOf(volume), "Zmiana objętości akwarium");
                         }
 
                         aquarium = aquariumRepository.save(aquarium);
