@@ -12,6 +12,8 @@ import com.aquatracker.user.UserRepository;
 import com.aquatracker.logs.LogEntry;
 import com.aquatracker.logs.LogEntryRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +29,8 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/v1/aquariums")
 public class AquariumController {
+
+    private static final Logger logger = LoggerFactory.getLogger(AquariumController.class);
 
     private final AquariumRepository aquariumRepository;
     private final FishSpeciesRepository fishRepository;
@@ -61,7 +65,7 @@ public class AquariumController {
                     User defaultUser = new User();
                     defaultUser.setEmail("default@aquatracker.com");
                     defaultUser.setUsername("Default User");
-                    defaultUser.setPassword("default");
+                    defaultUser.setPassword(""); // Hasło nie jest używane przy Cognito
                     defaultUser.setCreatedAt(LocalDateTime.now());
                     return userRepository.save(defaultUser);
                 });
@@ -109,15 +113,85 @@ public class AquariumController {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Pobiera listę akwariów dla użytkownika
+     * GET /api/v1/aquariums/user/{userId}
+     * 
+     * Dla kompatybilności z mock: GET /api/v1/aquariums/{userId} również działa
+     */
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<?> getAquariumsByUserId(@PathVariable String userId) {
+        try {
+            Long userIdLong = IdMapper.fromUserId(userId);
+            if (userIdLong == null) {
+                // Jeśli userId nie jest w formacie u_123, traktuj jako bezpośredni ID (dla kompatybilności z mock)
+                try {
+                    userIdLong = Long.parseLong(userId);
+                } catch (NumberFormatException e) {
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("error", "Invalid user ID format"));
+                }
+            }
+
+            List<Aquarium> aquariums = aquariumRepository.findByOwnerId(userIdLong);
+            List<AquariumResponseDto> aquariumDtos = aquariums.stream()
+                    .map(aquarium -> new AquariumResponseDto(aquarium, validationService))
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(aquariumDtos);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to fetch aquariums: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Pobiera akwarium po ID lub listę akwariów dla użytkownika (dla kompatybilności z mock)
+     * GET /api/v1/aquariums/{id}
+     * 
+     * Jeśli id jest w formacie aquarium ID (aq_123) - zwraca pojedyncze akwarium
+     * Jeśli id jest userId (liczba lub u_123) - zwraca listę akwariów użytkownika
+     */
     @GetMapping("/{id}")
     public ResponseEntity<?> getAquariumById(@PathVariable String id) {
+        // Najpierw sprawdź czy to aquarium ID (format aq_123)
         Long aquariumId = IdMapper.fromAquariumId(id);
-        if (aquariumId == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Invalid aquarium ID format"));
+        if (aquariumId != null) {
+            return aquariumRepository.findById(aquariumId)
+                    .map(aquarium -> ResponseEntity.ok(new AquariumResponseDto(aquarium, validationService)))
+                    .orElse(ResponseEntity.notFound().build());
         }
-        return aquariumRepository.findById(aquariumId)
-                .map(aquarium -> ResponseEntity.ok(new AquariumResponseDto(aquarium, validationService)))
-                .orElse(ResponseEntity.notFound().build());
+
+        // Jeśli nie jest aquarium ID, sprawdź czy to userId (dla kompatybilności z mock)
+        // Mock używa: GET /api/v1/aquariums/{userId}
+        Long userIdLong = IdMapper.fromUserId(id);
+        if (userIdLong == null) {
+            try {
+                // Spróbuj jako userId (liczba)
+                userIdLong = Long.parseLong(id);
+                // Sprawdź czy istnieje użytkownik z tym ID
+                if (userRepository.existsById(userIdLong)) {
+                    // To jest userId, zwróć akwaria użytkownika
+                    List<Aquarium> aquariums = aquariumRepository.findByOwnerId(userIdLong);
+                    List<AquariumResponseDto> aquariumDtos = aquariums.stream()
+                            .map(aquarium -> new AquariumResponseDto(aquarium, validationService))
+                            .collect(Collectors.toList());
+                    return ResponseEntity.ok(aquariumDtos);
+                }
+            } catch (NumberFormatException e) {
+                // Nie jest liczbą, zwróć błąd
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid ID format"));
+            }
+        } else {
+            // To jest userId w formacie u_123
+            List<Aquarium> aquariums = aquariumRepository.findByOwnerId(userIdLong);
+            List<AquariumResponseDto> aquariumDtos = aquariums.stream()
+                    .map(aquarium -> new AquariumResponseDto(aquarium, validationService))
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(aquariumDtos);
+        }
+
+        return ResponseEntity.badRequest().body(Map.of("error", "Invalid ID format"));
     }
 
     @PostMapping
@@ -172,7 +246,7 @@ public class AquariumController {
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(new AquariumResponseDto(aquarium, validationService));
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Failed to create aquarium", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Failed to create aquarium: " + e.getMessage(), 
                                  "details", e.getClass().getSimpleName()));
@@ -308,8 +382,7 @@ public class AquariumController {
             
             return ResponseEntity.ok(Map.of("aquarium", response, "logEntry", createLogEntryResponseDto(logEntry)));
         } catch (Exception e) {
-            e.printStackTrace();
-            System.err.println("Error in addFishToAquarium: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+            logger.error("Failed to add fish to aquarium", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Failed to add fish: " + e.getMessage(), 
                                  "details", e.getClass().getSimpleName()));

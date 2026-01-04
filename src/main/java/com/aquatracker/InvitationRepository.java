@@ -12,5 +12,7 @@ public interface InvitationRepository extends JpaRepository<Invitation, Long> {
     List<Invitation> findByRecipientId(Long recipientId);
     Optional<Invitation> findBySenderIdAndRecipientEmail(Long senderId, String recipientEmail);
     List<Invitation> findByRecipientIdAndStatus(Long recipientId, String status);
+    Optional<Invitation> findById(Long id);
+    List<Invitation> findByRecipientEmailAndStatus(String recipientEmail, String status);
 }
 
