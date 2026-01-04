@@ -16,6 +16,8 @@ import com.aquatracker.history.AquariumParameterHistoryRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -43,6 +45,9 @@ public class AquariumController {
     private final AquariumValidationService validationService;
     private final LogEntryRepository logEntryRepository;
     private final AquariumParameterHistoryRepository parameterHistoryRepository;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     public AquariumController(AquariumRepository aquariumRepository,
                              FishSpeciesRepository fishRepository,
@@ -445,9 +450,14 @@ public class AquariumController {
                 aquariumFishRepository.save(aquariumFish);
             } else if (newCount != null && newCount <= 0) {
                 aquariumFishRepository.delete(aquariumFish);
+                aquariumFishRepository.flush(); // Wymusza zapis usunięcia do bazy
+                entityManager.refresh(aquarium); // Odświeża obiekt aquarium z bazy
             }
             
-            aquarium = aquariumRepository.findById(aquariumId).orElse(aquarium);
+            // Pobierz świeży obiekt tylko jeśli nie został odświeżony
+            if (newCount == null || newCount > 0) {
+                aquarium = aquariumRepository.findById(aquariumId).orElse(aquarium);
+            }
             AquariumResponseDto response = new AquariumResponseDto(aquarium, validationService);
             
             // Create log entry
@@ -469,16 +479,22 @@ public class AquariumController {
             Long aquariumId = IdMapper.fromAquariumId(id);
             Long fId = IdMapper.fromFishId(fishId);
             if (aquariumId == null || fId == null) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Invalid ID format"));
+                System.out.println("DEBUG: Invalid ID format - aquariumId: " + aquariumId + ", fishId: " + fishId + ", fId: " + fId);
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid ID format", "details", "aquariumId: " + aquariumId + ", fishId: " + fishId + ", fId: " + fId));
             }
             
+            System.out.println("DEBUG: Removing fish - aquariumId: " + aquariumId + ", fId: " + fId);
             Aquarium aquarium = aquariumRepository.findById(aquariumId)
                     .orElseThrow(() -> new RuntimeException("Aquarium not found"));
             
-            AquariumFish aquariumFish = aquarium.getFishInAquarium().stream()
-                    .filter(af -> af.getFishSpecies() != null && af.getFishSpecies().getId().equals(fId))
-                    .findFirst()
-                    .orElseThrow(() -> new RuntimeException("Fish not found in aquarium"));
+            // Użyj repository zamiast stream() aby uniknąć problemów z lazy loading
+            System.out.println("DEBUG: Searching for AquariumFish with aquariumId: " + aquariumId + ", fishSpeciesId: " + fId);
+            AquariumFish aquariumFish = aquariumFishRepository.findByAquariumIdAndFishSpeciesId(aquariumId, fId)
+                    .orElseThrow(() -> {
+                        System.out.println("DEBUG: Fish not found in aquarium - aquariumId: " + aquariumId + ", fishSpeciesId: " + fId);
+                        return new RuntimeException("Fish not found in aquarium");
+                    });
+            System.out.println("DEBUG: Found AquariumFish: " + aquariumFish.getId() + ", count: " + aquariumFish.getFishCount());
             
             User user = aquarium.getOwner() != null ? aquarium.getOwner() : getOrCreateDefaultUser();
             FishSpecies fishSpecies = aquariumFish.getFishSpecies();
@@ -486,11 +502,12 @@ public class AquariumController {
             if (count != null && count < aquariumFish.getFishCount()) {
                 aquariumFish.setFishCount(aquariumFish.getFishCount() - count);
                 aquariumFishRepository.save(aquariumFish);
+                aquarium = aquariumRepository.findById(aquariumId).orElse(aquarium);
             } else {
                 aquariumFishRepository.delete(aquariumFish);
+                aquariumFishRepository.flush(); // Wymusza zapis usunięcia do bazy
+                entityManager.refresh(aquarium); // Odświeża obiekt aquarium z bazy (aktualizuje kolekcję fishInAquarium)
             }
-            
-            aquarium = aquariumRepository.findById(aquariumId).orElse(aquarium);
             AquariumResponseDto response = new AquariumResponseDto(aquarium, validationService);
             
             // Create log entry
@@ -580,9 +597,14 @@ public class AquariumController {
                 aquariumPlantRepository.save(aquariumPlant);
             } else if (newCount != null && newCount <= 0) {
                 aquariumPlantRepository.delete(aquariumPlant);
+                aquariumPlantRepository.flush(); // Wymusza zapis usunięcia do bazy
+                entityManager.refresh(aquarium); // Odświeża obiekt aquarium z bazy
             }
             
-            aquarium = aquariumRepository.findById(aquariumId).orElse(aquarium);
+            // Pobierz świeży obiekt tylko jeśli nie został odświeżony
+            if (newCount == null || newCount > 0) {
+                aquarium = aquariumRepository.findById(aquariumId).orElse(aquarium);
+            }
             AquariumResponseDto response = new AquariumResponseDto(aquarium, validationService);
             
             // Create log entry
@@ -619,11 +641,12 @@ public class AquariumController {
             if (count != null && count < aquariumPlant.getPlantCount()) {
                 aquariumPlant.setPlantCount(aquariumPlant.getPlantCount() - count);
                 aquariumPlantRepository.save(aquariumPlant);
+                aquarium = aquariumRepository.findById(aquariumId).orElse(aquarium);
             } else {
                 aquariumPlantRepository.delete(aquariumPlant);
+                aquariumPlantRepository.flush(); // Wymusza zapis usunięcia do bazy
+                entityManager.refresh(aquarium); // Odświeża obiekt aquarium z bazy (aktualizuje kolekcję plantsInAquarium)
             }
-            
-            aquarium = aquariumRepository.findById(aquariumId).orElse(aquarium);
             AquariumResponseDto response = new AquariumResponseDto(aquarium, validationService);
             
             // Create log entry
