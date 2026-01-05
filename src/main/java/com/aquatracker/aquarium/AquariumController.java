@@ -227,6 +227,11 @@ public class AquariumController {
             System.out.println("  Name: " + aquarium.getName());
             System.out.println("  Owner: " + (aquarium.getOwner() != null ? aquarium.getOwner().getEmail() : "null"));
 
+            // Create log entry for aquarium creation
+            User user = aquarium.getOwner() != null ? aquarium.getOwner() : getOrCreateDefaultUser();
+            LogEntry logEntry = createLogEntry(user, aquarium, "AQUARIUM_CREATED", "Utworzono akwarium", 
+                String.format("Akwarium '%s' zostało utworzone.", aquarium.getName()), null);
+
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(new AquariumResponseDto(aquarium, validationService));
         } catch (Exception e) {
@@ -314,9 +319,36 @@ public class AquariumController {
     }
 
     @DeleteMapping("/{aquariumId}")
+    @Transactional
     public ResponseEntity<?> deleteAquarium(@PathVariable Long aquariumId) {
         try {
-            if (aquariumRepository.existsById(aquariumId)) {
+            Aquarium aquarium = aquariumRepository.findById(aquariumId).orElse(null);
+            if (aquarium != null) {
+                // Create log entry before deletion (we need aquarium name for the log)
+                User user = aquarium.getOwner() != null ? aquarium.getOwner() : getOrCreateDefaultUser();
+                String aquariumName = aquarium.getName();
+                
+                // Set aquarium_id to null in log_entries before deleting aquarium
+                // This prevents foreign key constraint violation
+                List<LogEntry> logsToUpdate = logEntryRepository.findByAquarium_IdOrderByCreatedAtDesc(aquariumId);
+                for (LogEntry log : logsToUpdate) {
+                    log.setAquarium(null);
+                    logEntryRepository.save(log);
+                }
+                
+                // Create log entry for aquarium deletion
+                LogEntry logEntry = new LogEntry();
+                logEntry.setUser(user);
+                logEntry.setAquarium(null); // Set to null since aquarium will be deleted
+                logEntry.setAquariumName(aquariumName); // Store name for history
+                logEntry.setActionType("AQUARIUM_DELETED");
+                logEntry.setTitle("Usunięto akwarium");
+                logEntry.setMessage(String.format("Akwarium '%s' zostało usunięte.", aquariumName));
+                logEntry.setMetadata(null);
+                logEntry.setCreatedAt(LocalDateTime.now());
+                logEntryRepository.save(logEntry);
+                
+                // Now delete the aquarium
                 aquariumRepository.deleteById(aquariumId);
                 return ResponseEntity.noContent().build(); // 204 No Content zgodnie z OpenAPI
             } else {
