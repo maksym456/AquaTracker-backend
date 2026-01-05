@@ -8,16 +8,37 @@ servers:
   - url: http://localhost:3001/api/v1
     description: Local dev
 tags:
-  - name: Users
   - name: Settings
   - name: Fish
   - name: Plants
   - name: Aquariums
-  - name: Statistics
   - name: Logs
   - name: Contacts
 components:
   schemas:
+    LogCreateRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - actionType
+      properties:
+        actionType:
+          $ref: "#/components/schemas/LogActionType"
+        aquariumId:
+          $ref: "#/components/schemas/Id"
+        message:
+          type: string
+          description: Optional human-readable note/description
+          maxLength: 2000
+        metadata:
+          type: object
+          description: Optional structured data for the log entry
+          additionalProperties: true
+    UserId:
+      type: string
+      format: uuid
+      description: UUIDv4 identifier
+      example: "00000000-0000-4000-8000-000000000000"
     Id:
       type: integer
       format: int64
@@ -604,17 +625,9 @@ components:
           $ref: "#/components/schemas/Language"
         theme:
           $ref: "#/components/schemas/Theme"
-        sessionLengthMinutes:
-          type: integer
-          minimum: 1
-          example: 60
-        dataSource:
-          type: string
-          example: production
       required:
         - language
         - theme
-        - sessionLengthMinutes
         - dataSource
     SettingsUpdateRequest:
       type: object
@@ -870,259 +883,18 @@ components:
         - name
         - count
         - percentage
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
 paths:
-  /users:
+  /settings/{userId}:
     get:
-      summary: List users (optionally filter by email)
-      description: |
-        Lists users. Intended for admin/internal usage.
-        Use `email` to fetch user by email as a convenience filter.
-      tags:
-        - Users
-      parameters:
-        - name: email
-          in: query
-          schema:
-            type: string
-            format: email
-          description: Exact email match.
-        - name: q
-          in: query
-          schema:
-            type: string
-          description: Partial match on username/email (implementation-defined).
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            minimum: 1
-            default: 50
-        - name: offset
-          in: query
-          schema:
-            type: integer
-            minimum: 0
-            default: 0
-      responses:
-        "200":
-          description: Users list
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/User"
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "403":
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - bearerAuth: []
-    post:
-      summary: Create user
-      description: Creates a new user account.
-      tags:
-        - Users
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UserCreateRequest"
-      responses:
-        "201":
-          description: Created user
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/User"
-        "400":
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "422":
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-  /users/by-email:
-    get:
-      summary: Get user by email
-      tags:
-        - Users
-      parameters:
-        - name: email
-          in: query
-          required: true
-          schema:
-            type: string
-            format: email
-          example: anna.nowak@example.com
-      responses:
-        "200":
-          description: User
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/User"
-        "404":
-          description: Not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - bearerAuth: []
-  /users/me:
-    get:
-      summary: Get current user
-      tags:
-        - Users
-      responses:
-        "200":
-          description: Current user
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/User"
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - bearerAuth: []
-  /users/{userId}:
-    get:
-      summary: Get user by id
-      tags:
-        - Users
-      parameters:
-        - name: userId
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Id"
-          example: 123
-      responses:
-        "200":
-          description: User
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/User"
-        "404":
-          description: Not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - bearerAuth: []
-    patch:
-      summary: Update user (partial)
-      tags:
-        - Users
-      parameters:
-        - name: userId
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Id"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UserUpdateRequest"
-      responses:
-        "200":
-          description: Updated user
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/User"
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "403":
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "404":
-          description: Not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - bearerAuth: []
-    delete:
-      summary: Delete user
-      tags:
-        - Users
-      parameters:
-        - name: userId
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Id"
-      responses:
-        "204":
-          description: No Content
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "403":
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "404":
-          description: Not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - bearerAuth: []
-  /settings:
-    get:
-      summary: Get settings
+      summary: Fetch setting for user
       tags:
         - Settings
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UserId"
       responses:
         "200":
           description: Settings
@@ -1133,20 +905,22 @@ paths:
               example:
                 language: pl
                 theme: dark
-                sessionLengthMinutes: 60
-                dataSource: production
         "401":
           description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - bearerAuth: []
     patch:
-      summary: Update settings (partial)
+      summary: Update settings for user
       tags:
         - Settings
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UserId"
       requestBody:
         required: true
         content:
@@ -1155,9 +929,7 @@ paths:
               $ref: "#/components/schemas/SettingsUpdateRequest"
             example:
               language: en
-              theme: dark
-              sessionLengthMinutes: 90
-              dataSource: demo
+              theme: light
       responses:
         "200":
           description: Updated settings
@@ -1177,8 +949,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - bearerAuth: []
   /fish:
     get:
       summary: List fish
@@ -1193,139 +963,137 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Fish"
-    post:
-      summary: Add fish
-      description: Creates a fish entry (admin/internal).
-      tags:
-        - Fish
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/FishCreateRequest"
-      responses:
-        "201":
-          description: Created fish
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Fish"
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "403":
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - bearerAuth: []
-  /fish/{fishId}:
-    get:
-      summary: Get fish by id
-      tags:
-        - Fish
-      parameters:
-        - name: fishId
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Id"
-          example: 2
-      responses:
-        "200":
-          description: Fish
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Fish"
-        "404":
-          description: Not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-    patch:
-      summary: Update fish (partial)
-      tags:
-        - Fish
-      parameters:
-        - name: fishId
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Id"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/FishUpdateRequest"
-      responses:
-        "200":
-          description: Updated fish
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Fish"
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "403":
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "404":
-          description: Not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - bearerAuth: []
-    delete:
-      summary: Delete fish
-      tags:
-        - Fish
-      parameters:
-        - name: fishId
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Id"
-      responses:
-        "204":
-          description: No Content
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "403":
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "404":
-          description: Not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - bearerAuth: []
+#    post:
+#      summary: Add fish
+#      description: Creates a fish entry (admin/internal).
+#      tags:
+#        - Fish
+#      requestBody:
+#        required: true
+#        content:
+#          application/json:
+#            schema:
+#              $ref: "#/components/schemas/FishCreateRequest"
+#      responses:
+#        "201":
+#          description: Created fish
+#          content:
+#            application/json:
+#              schema:
+#                $ref: "#/components/schemas/Fish"
+#        "401":
+#          description: Unauthorized
+#          content:
+#            application/json:
+#              schema:
+#                $ref: "#/components/schemas/ErrorResponse"
+#        "403":
+#          description: Forbidden
+#          content:
+#            application/json:
+#              schema:
+#                $ref: "#/components/schemas/ErrorResponse"
+#  /fish/{fishId}:
+#    get:
+#      summary: Get fish by id
+#      tags:
+#        - Fish
+#      parameters:
+#        - name: fishId
+#          in: path
+#          required: true
+#          schema:
+#            $ref: "#/components/schemas/Id"
+#          example: 2
+#      responses:
+#        "200":
+#          description: Fish
+#          content:
+#            application/json:
+#              schema:
+#                $ref: "#/components/schemas/Fish"
+#        "404":
+#          description: Not found
+#          content:
+#            application/json:
+#              schema:
+#                $ref: "#/components/schemas/ErrorResponse"
+#    patch:
+#      summary: Update fish (partial)
+#      tags:
+#        - Fish
+#      parameters:
+#        - name: fishId
+#          in: path
+#          required: true
+#          schema:
+#            $ref: "#/components/schemas/Id"
+#      requestBody:
+#        required: true
+#        content:
+#          application/json:
+#            schema:
+#              $ref: "#/components/schemas/FishUpdateRequest"
+#      responses:
+#        "200":
+#          description: Updated fish
+#          content:
+#            application/json:
+#              schema:
+#                $ref: "#/components/schemas/Fish"
+#        "401":
+#          description: Unauthorized
+#          content:
+#            application/json:
+#              schema:
+#                $ref: "#/components/schemas/ErrorResponse"
+#        "403":
+#          description: Forbidden
+#          content:
+#            application/json:
+#              schema:
+#                $ref: "#/components/schemas/ErrorResponse"
+#        "404":
+#          description: Not found
+#          content:
+#            application/json:
+#              schema:
+#                $ref: "#/components/schemas/ErrorResponse"
+#      security:
+#        - bearerAuth: []
+#    delete:
+#      summary: Delete fish
+#      tags:
+#        - Fish
+#      parameters:
+#        - name: fishId
+#          in: path
+#          required: true
+#          schema:
+#            $ref: "#/components/schemas/Id"
+#      responses:
+#        "204":
+#          description: No Content
+#        "401":
+#          description: Unauthorized
+#          content:
+#            application/json:
+#              schema:
+#                $ref: "#/components/schemas/ErrorResponse"
+#        "403":
+#          description: Forbidden
+#          content:
+#            application/json:
+#              schema:
+#                $ref: "#/components/schemas/ErrorResponse"
+#        "404":
+#          description: Not found
+#          content:
+#            application/json:
+#              schema:
+#                $ref: "#/components/schemas/ErrorResponse"
+#      security:
+#        - bearerAuth: []
   /plants:
     get:
       summary: List plants
@@ -1340,140 +1108,140 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Plant"
-    post:
-      summary: Add plant
-      description: Creates a plant entry (admin/internal).
-      tags:
-        - Plants
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/PlantCreateRequest"
-      responses:
-        "201":
-          description: Created plant
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Plant"
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "403":
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - bearerAuth: []
-  /plants/{plantId}:
-    get:
-      summary: Get plant by id
-      tags:
-        - Plants
-      parameters:
-        - name: plantId
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Id"
-          example: 2
-      responses:
-        "200":
-          description: Plant
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Plant"
-        "404":
-          description: Not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-    patch:
-      summary: Update plant (partial)
-      tags:
-        - Plants
-      parameters:
-        - name: plantId
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Id"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/PlantUpdateRequest"
-      responses:
-        "200":
-          description: Updated plant
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Plant"
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "403":
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "404":
-          description: Not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - bearerAuth: []
-    delete:
-      summary: Delete plant
-      tags:
-        - Plants
-      parameters:
-        - name: plantId
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Id"
-      responses:
-        "204":
-          description: No Content
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "403":
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "404":
-          description: Not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - bearerAuth: []
-  /aquariums:
+#    post:
+#      summary: Add plant
+#      description: Creates a plant entry (admin/internal).
+#      tags:
+#        - Plants
+#      requestBody:
+#        required: true
+#        content:
+#          application/json:
+#            schema:
+#              $ref: "#/components/schemas/PlantCreateRequest"
+#      responses:
+#        "201":
+#          description: Created plant
+#          content:
+#            application/json:
+#              schema:
+#                $ref: "#/components/schemas/Plant"
+#        "401":
+#          description: Unauthorized
+#          content:
+#            application/json:
+#              schema:
+#                $ref: "#/components/schemas/ErrorResponse"
+#        "403":
+#          description: Forbidden
+#          content:
+#            application/json:
+#              schema:
+#                $ref: "#/components/schemas/ErrorResponse"
+#      security:
+#        - bearerAuth: []
+#  /plants/{plantId}:
+#    get:
+#      summary: Get plant by id
+#      tags:
+#        - Plants
+#      parameters:
+#        - name: plantId
+#          in: path
+#          required: true
+#          schema:
+#            $ref: "#/components/schemas/Id"
+#          example: 2
+#      responses:
+#        "200":
+#          description: Plant
+#          content:
+#            application/json:
+#              schema:
+#                $ref: "#/components/schemas/Plant"
+#        "404":
+#          description: Not found
+#          content:
+#            application/json:
+#              schema:
+#                $ref: "#/components/schemas/ErrorResponse"
+#    patch:
+#      summary: Update plant (partial)
+#      tags:
+#        - Plants
+#      parameters:
+#        - name: plantId
+#          in: path
+#          required: true
+#          schema:
+#            $ref: "#/components/schemas/Id"
+#      requestBody:
+#        required: true
+#        content:
+#          application/json:
+#            schema:
+#              $ref: "#/components/schemas/PlantUpdateRequest"
+#      responses:
+#        "200":
+#          description: Updated plant
+#          content:
+#            application/json:
+#              schema:
+#                $ref: "#/components/schemas/Plant"
+#        "401":
+#          description: Unauthorized
+#          content:
+#            application/json:
+#              schema:
+#                $ref: "#/components/schemas/ErrorResponse"
+#        "403":
+#          description: Forbidden
+#          content:
+#            application/json:
+#              schema:
+#                $ref: "#/components/schemas/ErrorResponse"
+#        "404":
+#          description: Not found
+#          content:
+#            application/json:
+#              schema:
+#                $ref: "#/components/schemas/ErrorResponse"
+#      security:
+#        - bearerAuth: []
+#    delete:
+#      summary: Delete plant
+#      tags:
+#        - Plants
+#      parameters:
+#        - name: plantId
+#          in: path
+#          required: true
+#          schema:
+#            $ref: "#/components/schemas/Id"
+#      responses:
+#        "204":
+#          description: No Content
+#        "401":
+#          description: Unauthorized
+#          content:
+#            application/json:
+#              schema:
+#                $ref: "#/components/schemas/ErrorResponse"
+#        "403":
+#          description: Forbidden
+#          content:
+#            application/json:
+#              schema:
+#                $ref: "#/components/schemas/ErrorResponse"
+#        "404":
+#          description: Not found
+#          content:
+#            application/json:
+#              schema:
+#                $ref: "#/components/schemas/ErrorResponse"
+#      security:
+#        - bearerAuth: []
+  /aquariums/{userId}:
     get:
       summary: List my aquariums
       tags:
@@ -1493,12 +1261,16 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - bearerAuth: []
     post:
       summary: Create aquarium
       tags:
         - Aquariums
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UserId"
       requestBody:
         required: true
         content:
@@ -1524,8 +1296,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - bearerAuth: []
   /aquariums/{aquariumId}:
     get:
       summary: Get aquarium by id
@@ -1557,10 +1327,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - bearerAuth: []
     put:
-      summary: Update aquarium (full)
+      summary: Update aquarium
       tags:
         - Aquariums
       parameters:
@@ -1600,8 +1368,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - bearerAuth: []
     delete:
       summary: Delete aquarium
       tags:
@@ -1627,56 +1393,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - bearerAuth: []
-  /aquariums/{aquariumId}/parameters:
-    patch:
-      summary: Update aquarium parameters (partial)
-      tags:
-        - Aquariums
-      parameters:
-        - name: aquariumId
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Id"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/AquariumParametersUpdateRequest"
-            example:
-              temperatureC: 25
-              ph: 7.0
-              hardnessDGH: 12
-      responses:
-        "200":
-          description: Updated aquarium
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Aquarium"
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "404":
-          description: Not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "422":
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - bearerAuth: []
   /aquariums/{aquariumId}/fish:
     post:
       summary: Add fish to aquarium
@@ -1722,53 +1438,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - bearerAuth: []
   /aquariums/{aquariumId}/fish/{fishId}:
-    patch:
-      summary: Update fish count in aquarium
-      tags:
-        - Aquariums
-      parameters:
-        - name: aquariumId
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Id"
-        - name: fishId
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Id"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UpdateFishCountRequest"
-            example:
-              count: 3
-      responses:
-        "200":
-          description: Aquarium + log entry
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AquariumAndLogResponse"
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "404":
-          description: Not found (aquarium or fish)
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - bearerAuth: []
     delete:
       summary: Remove fish from aquarium
       description: "Optionally pass `count` to remove a specific amount; if omitted, removes the entry."
@@ -1810,8 +1480,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - bearerAuth: []
   /aquariums/{aquariumId}/plants:
     post:
       summary: Add plant to aquarium
@@ -1851,53 +1519,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - bearerAuth: []
   /aquariums/{aquariumId}/plants/{plantId}:
-    patch:
-      summary: Update plant count in aquarium
-      tags:
-        - Aquariums
-      parameters:
-        - name: aquariumId
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Id"
-        - name: plantId
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Id"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UpdatePlantCountRequest"
-            example:
-              count: 2
-      responses:
-        "200":
-          description: Aquarium + log entry
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AquariumAndLogResponse"
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "404":
-          description: Not found (aquarium or plant)
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - bearerAuth: []
     delete:
       summary: Remove plant from aquarium
       description: "Optionally pass `count` to remove a specific amount; if omitted, removes the entry."
@@ -1938,9 +1560,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - bearerAuth: []
-  /aquariums/{aquariumId}/status/recalculate:
+  /aquariums/{aquariumId}/status:
     post:
       summary: Recalculate aquarium status
       tags:
@@ -1976,33 +1596,11 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - bearerAuth: []
-  /aquariums/stats:
-    get:
-      summary: Global stats (all my aquariums)
-      tags:
-        - Statistics
-      responses:
-        "200":
-          description: Stats
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/StatsGlobal"
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - bearerAuth: []
   /aquariums/{aquariumId}/stats:
     get:
       summary: Stats for a single aquarium
       tags:
-        - Statistics
+        - Aquariums
       parameters:
         - name: aquariumId
           in: path
@@ -2028,14 +1626,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - bearerAuth: []
-  /logs:
+  /logs/{userId}:
     get:
       summary: List logs for current user
       tags:
         - Logs
       parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UserId"
         - name: actionType
           in: query
           schema:
@@ -2048,9 +1649,7 @@ paths:
           in: query
           schema:
             type: string
-            enum:
-              - asc
-              - desc
+            enum: [asc, desc]
             default: desc
         - name: limit
           in: query
@@ -2079,33 +1678,79 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - bearerAuth: []
-  /contacts:
-    get:
-      summary: Get contacts and invitations
+    post:
+      summary: Add a log entry for current user
       tags:
-        - Contacts
+        - Logs
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LogCreateRequest"
       responses:
-        "200":
-          description: Contacts overview
+        "201":
+          description: Log created
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ContactsOverview"
+                $ref: "#/components/schemas/LogEntry"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "401":
           description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - bearerAuth: []
-  /contacts/invitations:
+  /contacts/{userId}:
+    get:
+      summary: List contacts for current user
+      tags:
+        - Contacts
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UserId"
+          example: 1
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /contacts/{userId}/{contactId}:
     post:
       summary: Send invitation by email
       tags:
         - Contacts
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UserId"
       requestBody:
         required: true
         content:
@@ -2134,14 +1779,48 @@ paths:
               example:
                 error: UserNotFound
                 message: Użytkownik o podanym adresie e-mail nie istnieje.
-      security:
-        - bearerAuth: []
-  /contacts/invitations/{invitationId}/accept:
+    delete:
+      summary: Remove friend or cancel invitation
+      tags:
+        - Contacts
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UserId"
+        - name: contactId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Id"
+          example: 1
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /contacts/{userId}/{contactId}/accept:
     post:
       summary: Accept invitation
       tags:
         - Contacts
       parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UserId"
         - name: invitationId
           in: path
           required: true
@@ -2167,14 +1846,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - bearerAuth: []
-  /contacts/invitations/{invitationId}/reject:
+  /contacts/{userId}/{contactId}/reject:
     post:
       summary: Reject invitation
       tags:
         - Contacts
       parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UserId"
         - name: invitationId
           in: path
           required: true
@@ -2205,63 +1887,3 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - bearerAuth: []
-  /contacts/{userId}/{contactId}:
-    delete:
-      summary: Remove friend
-      tags:
-        - Contacts
-      parameters:
-        - name: contactId
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Id"
-          example: 1
-      responses:
-        "204":
-          description: No Content
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "404":
-          description: Not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - bearerAuth: []
-  /contacts/{userId}:
-    get:
-      summary: List contacts for current user
-      tags:
-        - Contacts
-      parameters:
-        - name: userId
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Id"
-          example: 1
-      responses:
-        "204":
-          description: No Content
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "404":
-          description: Not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - bearerAuth: []
