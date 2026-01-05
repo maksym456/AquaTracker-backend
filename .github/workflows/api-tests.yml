@@ -1,28 +1,48 @@
 name: Run API Smoke Tests
 
-on:
-  push:
-    branches: [ master ]  
-  pull_request:
+on:  
+  push:  
+    branches: [ master ] 
+  pull_request: 
     branches: [ master ]
-
 jobs:
   test:
-    runs-on: ubuntu-latest  
+    runs-on: ubuntu-latest   
+
+    services:
+      postgres:              
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
-    - name: Checkout code
+    - name: Pobierz kod
       uses: actions/checkout@v4
 
-    - name: Set up Node.js
+    - name: Zainstaluj Java
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+
+    - name: Uruchom backend w tle
+      run: |
+        nohup ./mvnw spring-boot:run &
+        echo "Czekam 40 sekund na start backendu..."
+        sleep 40
+
+    - name: Zainstaluj Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '22'  
+        node-version: '22'
 
-    - name: Install dependencies 
-      run: npm install  
-
-    - name: Run smoke tests
+    - name: Uruchom testy API
       env:
-        JWT: ${{ secrets.JWT_TOKEN }}  
-      run: node tests/Api/api-test.js
+        JWT: ${{ secrets.JWT_TOKEN }}   
+      run: |
+        cd tests/Api
+        node api-test.js
