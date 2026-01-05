@@ -3,7 +3,6 @@ package com.aquatracker.user;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(name = "users", uniqueConstraints = {
@@ -24,9 +23,19 @@ public class User {
     @Email(message = "Email musi być poprawny")
     private String email;
 
-    @Column(name = "password")
-    @NotBlank(message = "Hasło jest wymagane")
-    @Size(min = 8, message = "Hasło musi mieć co najmniej 8 znaków")
+    /**
+     * @deprecated Pole password nie jest używane przy autoryzacji przez AWS Cognito.
+     * Hasła są zarządzane przez AWS Cognito, nie przechowujemy ich lokalnie.
+     * Pole pozostaje dla kompatybilności wstecznej, ale powinno być zawsze puste.
+     */
+    /**
+     * @deprecated Pole password nie jest używane przy autoryzacji przez AWS Cognito.
+     * Hasła są zarządzane przez AWS Cognito, nie przechowujemy ich lokalnie.
+     * Pole pozostaje dla kompatybilności wstecznej, ale powinno być zawsze puste.
+     */
+    @Deprecated
+    @SuppressWarnings("DeprecatedIsStillUsed")
+    @Column(name = "password", nullable = true)
     private String password;
 
     @Column(name = "created_at")
@@ -43,6 +52,9 @@ public class User {
     
     @Column(name = "settings_data_source")
     private String settingsDataSource;
+
+    @Column(name = "cognito_sub", unique = true, nullable = true)
+    private String cognitoSub;
 
     public Long getId() {
         return id;
@@ -68,10 +80,14 @@ public class User {
         this.email = email;
     }
 
+    @Deprecated
+    @SuppressWarnings("DeprecatedIsStillUsed")
     public String getPassword() {
         return password;
     }
 
+    @Deprecated
+    @SuppressWarnings("DeprecatedIsStillUsed")
     public void setPassword(String password) {
         this.password = password;
     }
@@ -86,7 +102,7 @@ public class User {
     }
 
     public String getSettingsLanguage() {
-        return settingsLanguage != null ? settingsLanguage : "pl";
+        return settingsLanguage;
     }
 
     public void setSettingsLanguage(String settingsLanguage) {
@@ -94,7 +110,7 @@ public class User {
     }
 
     public String getSettingsTheme() {
-        return settingsTheme != null ? settingsTheme : "light";
+        return settingsTheme;
     }
 
     public void setSettingsTheme(String settingsTheme) {
@@ -102,7 +118,7 @@ public class User {
     }
 
     public Integer getSettingsSessionLengthMinutes() {
-        return settingsSessionLengthMinutes != null ? settingsSessionLengthMinutes : 60;
+        return settingsSessionLengthMinutes;
     }
 
     public void setSettingsSessionLengthMinutes(Integer settingsSessionLengthMinutes) {
@@ -110,10 +126,18 @@ public class User {
     }
 
     public String getSettingsDataSource() {
-        return settingsDataSource != null ? settingsDataSource : "production";
+        return settingsDataSource;
     }
 
     public void setSettingsDataSource(String settingsDataSource) {
         this.settingsDataSource = settingsDataSource;
+    }
+
+    public String getCognitoSub() {
+        return cognitoSub;
+    }
+
+    public void setCognitoSub(String cognitoSub) {
+        this.cognitoSub = cognitoSub;
     }
 }

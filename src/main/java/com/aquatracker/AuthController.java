@@ -7,11 +7,18 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * AuthController - obsługuje autoryzację z AWS Cognito
+ * 
+ * UWAGA: Logowanie i rejestracja odbywają się bezpośrednio między Frontend a AWS Cognito.
+ * Backend nie uczestniczy w procesie autoryzacji - tylko weryfikuje tokeny JWT i zwraca dane użytkownika.
+ * 
+ * Synchronizacja użytkowników z Cognito odbywa się przez POST /api/v1/users/sync
+ */
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
@@ -22,128 +29,61 @@ public class AuthController {
         this.userRepository = userRepository;
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
-        Optional<User> userOpt = userRepository.findByEmail(request.getEmail());
-        
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "Invalid email or password"));
-        }
-
-        User user = userOpt.get();
-        
-        if (!user.getPassword().equals(request.getPassword())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "Invalid email or password"));
-        }
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", true);
-        
-        Map<String, Object> userData = new HashMap<>();
-        userData.put("id", IdMapper.toUserId(user.getId()));
-        userData.put("username", user.getUsername());
-        userData.put("email", user.getEmail());
-        
-        response.put("token", "token-" + user.getId() + "-" + System.currentTimeMillis());
-        response.put("user", userData);
-        
-        return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
-        if (request.getEmail() == null || request.getEmail().isEmpty() || 
-            request.getPassword() == null || request.getPassword().isEmpty() ||
-            request.getUsername() == null || request.getUsername().isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", "All fields are required"));
-        }
-
-        if (userRepository.existsByEmail(request.getEmail())) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(Map.of("error", "Email already exists"));
-        }
-
-        if (request.getPassword().length() < 6) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", "Password must be at least 6 characters"));
-        }
-
-        User user = new User();
-        user.setEmail(request.getEmail());
-        user.setUsername(request.getUsername());
-        user.setPassword(request.getPassword());
-        user.setCreatedAt(LocalDateTime.now());
-        
-        user = userRepository.save(user);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", true);
-        
-        Map<String, Object> userData = new HashMap<>();
-        userData.put("id", IdMapper.toUserId(user.getId()));
-        userData.put("username", user.getUsername());
-        userData.put("email", user.getEmail());
-        userData.put("createdAt", user.getCreatedAt());
-        
-        return ResponseEntity.status(HttpStatus.CREATED).body(userData);
-    }
-
-    public static class LoginRequest {
-        private String email;
-        private String password;
-
-        public String getEmail() {
-            return email;
-        }
-
-        public void setEmail(String email) {
-            this.email = email;
-        }
-
-        public String getPassword() {
-            return password;
-        }
-
-        public void setPassword(String password) {
-            this.password = password;
-        }
-    }
-
+    /**
+     * Pobiera dane zalogowanego użytkownika
+     * GET /api/v1/auth/me
+     * 
+     * Wymaga nagłówka Authorization z tokenem JWT z AWS Cognito.
+     * CognitoSub (sub) będzie wyciągane z tokenu przez SecurityConfig (do zaimplementowania przez Maksyma).
+     * 
+     * Na razie przyjmuje cognitoSub jako query parameter dla testów (TEMP - do usunięcia po implementacji JWT).
+     * 
+     * @param cognitoSub - TYLKO DO TESTOWANIA - po implementacji JWT będzie wyciągane z tokenu
+     * @return Dane użytkownika z lokalnej bazy danych
+     */
     @GetMapping("/me")
-    public ResponseEntity<?> getCurrentUser() {
-        return ResponseEntity.ok(Map.of("error", "JWT authentication not implemented yet"));
-    }
+    public ResponseEntity<?> getCurrentUser(@RequestParam(required = false) String cognitoSub) {
+        try {
+            // TODO: Po implementacji JWT przez Maksyma, wyciągnij cognitoSub z tokenu:
+            // String cognitoSub = extractCognitoSubFromJWT(request);
+            // Na razie używamy query parameter tylko do testów
+            
+            if (cognitoSub == null || cognitoSub.trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of(
+                            "error", "JWT token authentication not implemented yet",
+                            "message", "Please provide cognitoSub as query parameter for testing. " +
+                                      "After JWT implementation, cognitoSub will be extracted from Authorization header."
+                        ));
+            }
 
-    public static class RegisterRequest {
-        private String username;
-        private String email;
-        private String password;
+            Optional<User> userOpt = userRepository.findByCognitoSub(cognitoSub.trim());
+            
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of(
+                            "error", "User not found",
+                            "message", "User with this cognitoSub does not exist in local database. " +
+                                      "Please sync user first using POST /api/v1/users/sync"
+                        ));
+            }
 
-        public String getUsername() {
-            return username;
-        }
+            User user = userOpt.get();
+            Map<String, Object> userData = new HashMap<>();
+            userData.put("id", IdMapper.toUserId(user.getId()));
+            userData.put("username", user.getUsername());
+            userData.put("email", user.getEmail());
+            userData.put("cognitoSub", user.getCognitoSub());
+            userData.put("createdAt", user.getCreatedAt());
+            userData.put("settingsLanguage", user.getSettingsLanguage());
+            userData.put("settingsTheme", user.getSettingsTheme());
+            userData.put("settingsSessionLengthMinutes", user.getSettingsSessionLengthMinutes());
+            userData.put("settingsDataSource", user.getSettingsDataSource());
 
-        public void setUsername(String username) {
-            this.username = username;
-        }
-
-        public String getEmail() {
-            return email;
-        }
-
-        public void setEmail(String email) {
-            this.email = email;
-        }
-
-        public String getPassword() {
-            return password;
-        }
-
-        public void setPassword(String password) {
-            this.password = password;
+            return ResponseEntity.ok(userData);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to fetch current user: " + e.getMessage()));
         }
     }
 }

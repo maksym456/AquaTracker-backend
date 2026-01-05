@@ -11,7 +11,13 @@ import com.aquatracker.user.User;
 import com.aquatracker.user.UserRepository;
 import com.aquatracker.logs.LogEntry;
 import com.aquatracker.logs.LogEntryRepository;
+import com.aquatracker.history.AquariumParameterHistory;
+import com.aquatracker.history.AquariumParameterHistoryRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,6 +34,8 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/v1/aquariums")
 public class AquariumController {
 
+    private static final Logger logger = LoggerFactory.getLogger(AquariumController.class);
+
     private final AquariumRepository aquariumRepository;
     private final FishSpeciesRepository fishRepository;
     private final PlantRepository plantRepository;
@@ -36,6 +44,10 @@ public class AquariumController {
     private final AquariumPlantRepository aquariumPlantRepository;
     private final AquariumValidationService validationService;
     private final LogEntryRepository logEntryRepository;
+    private final AquariumParameterHistoryRepository parameterHistoryRepository;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     public AquariumController(AquariumRepository aquariumRepository,
                              FishSpeciesRepository fishRepository,
@@ -44,7 +56,8 @@ public class AquariumController {
                              AquariumFishRepository aquariumFishRepository,
                              AquariumPlantRepository aquariumPlantRepository,
                              AquariumValidationService validationService,
-                             LogEntryRepository logEntryRepository) {
+                             LogEntryRepository logEntryRepository,
+                             AquariumParameterHistoryRepository parameterHistoryRepository) {
         this.aquariumRepository = aquariumRepository;
         this.fishRepository = fishRepository;
         this.plantRepository = plantRepository;
@@ -53,6 +66,7 @@ public class AquariumController {
         this.aquariumPlantRepository = aquariumPlantRepository;
         this.validationService = validationService;
         this.logEntryRepository = logEntryRepository;
+        this.parameterHistoryRepository = parameterHistoryRepository;
     }
     
     private User getOrCreateDefaultUser() {
@@ -61,7 +75,7 @@ public class AquariumController {
                     User defaultUser = new User();
                     defaultUser.setEmail("default@aquatracker.com");
                     defaultUser.setUsername("Default User");
-                    defaultUser.setPassword("default");
+                    defaultUser.setPassword(""); // Hasło nie jest używane przy Cognito
                     defaultUser.setCreatedAt(LocalDateTime.now());
                     return userRepository.save(defaultUser);
                 });
@@ -102,6 +116,14 @@ public class AquariumController {
         return dto;
     }
 
+    private void saveParameterHistory(Aquarium aquarium, User user, String parameterName, String oldValue, String newValue, String description) {
+        if (oldValue != null && newValue != null && !oldValue.equals(newValue)) {
+            AquariumParameterHistory history = new AquariumParameterHistory(aquarium, user, parameterName, oldValue, newValue);
+            history.setDescription(description);
+            parameterHistoryRepository.save(history);
+        }
+    }
+
     @GetMapping
     public List<AquariumResponseDto> getAllAquariums() {
         return aquariumRepository.findAll().stream()
@@ -109,15 +131,85 @@ public class AquariumController {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Pobiera listę akwariów dla użytkownika
+     * GET /api/v1/aquariums/user/{userId}
+     * 
+     * Dla kompatybilności z mock: GET /api/v1/aquariums/{userId} również działa
+     */
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<?> getAquariumsByUserId(@PathVariable String userId) {
+        try {
+            Long userIdLong = IdMapper.fromUserId(userId);
+            if (userIdLong == null) {
+                // Jeśli userId nie jest w formacie u_123, traktuj jako bezpośredni ID (dla kompatybilności z mock)
+                try {
+                    userIdLong = Long.parseLong(userId);
+                } catch (NumberFormatException e) {
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("error", "Invalid user ID format"));
+                }
+            }
+
+            List<Aquarium> aquariums = aquariumRepository.findByOwnerId(userIdLong);
+            List<AquariumResponseDto> aquariumDtos = aquariums.stream()
+                    .map(aquarium -> new AquariumResponseDto(aquarium, validationService))
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(aquariumDtos);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to fetch aquariums: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Pobiera akwarium po ID lub listę akwariów dla użytkownika (dla kompatybilności z mock)
+     * GET /api/v1/aquariums/{id}
+     * 
+     * Jeśli id jest w formacie aquarium ID (aq_123) - zwraca pojedyncze akwarium
+     * Jeśli id jest userId (liczba lub u_123) - zwraca listę akwariów użytkownika
+     */
     @GetMapping("/{id}")
     public ResponseEntity<?> getAquariumById(@PathVariable String id) {
+        // Najpierw sprawdź czy to aquarium ID (format aq_123)
         Long aquariumId = IdMapper.fromAquariumId(id);
-        if (aquariumId == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Invalid aquarium ID format"));
+        if (aquariumId != null) {
+            return aquariumRepository.findById(aquariumId)
+                    .map(aquarium -> ResponseEntity.ok(new AquariumResponseDto(aquarium, validationService)))
+                    .orElse(ResponseEntity.notFound().build());
         }
-        return aquariumRepository.findById(aquariumId)
-                .map(aquarium -> ResponseEntity.ok(new AquariumResponseDto(aquarium, validationService)))
-                .orElse(ResponseEntity.notFound().build());
+
+        // Jeśli nie jest aquarium ID, sprawdź czy to userId (dla kompatybilności z mock)
+        // Mock używa: GET /api/v1/aquariums/{userId}
+        Long userIdLong = IdMapper.fromUserId(id);
+        if (userIdLong == null) {
+            try {
+                // Spróbuj jako userId (liczba)
+                userIdLong = Long.parseLong(id);
+                // Sprawdź czy istnieje użytkownik z tym ID
+                if (userRepository.existsById(userIdLong)) {
+                    // To jest userId, zwróć akwaria użytkownika
+                    List<Aquarium> aquariums = aquariumRepository.findByOwnerId(userIdLong);
+                    List<AquariumResponseDto> aquariumDtos = aquariums.stream()
+                            .map(aquarium -> new AquariumResponseDto(aquarium, validationService))
+                            .collect(Collectors.toList());
+                    return ResponseEntity.ok(aquariumDtos);
+                }
+            } catch (NumberFormatException e) {
+                // Nie jest liczbą, zwróć błąd
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid ID format"));
+            }
+        } else {
+            // To jest userId w formacie u_123
+            List<Aquarium> aquariums = aquariumRepository.findByOwnerId(userIdLong);
+            List<AquariumResponseDto> aquariumDtos = aquariums.stream()
+                    .map(aquarium -> new AquariumResponseDto(aquarium, validationService))
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(aquariumDtos);
+        }
+
+        return ResponseEntity.badRequest().body(Map.of("error", "Invalid ID format"));
     }
 
     @PostMapping
@@ -172,7 +264,7 @@ public class AquariumController {
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(new AquariumResponseDto(aquarium, validationService));
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Failed to create aquarium", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Failed to create aquarium: " + e.getMessage(), 
                                  "details", e.getClass().getSimpleName()));
@@ -188,40 +280,53 @@ public class AquariumController {
             }
             return aquariumRepository.findById(aquariumId)
                     .map(aquarium -> {
+                        User user = aquarium.getOwner() != null ? aquarium.getOwner() : getOrCreateDefaultUser();
+                        
                         if (request.getName() != null && !request.getName().trim().isEmpty()) {
+                            String oldName = aquarium.getName();
                             aquarium.setName(request.getName());
-                        }
-                        if (request.getWaterType() != null) {
-                            aquarium.setWaterType(request.getWaterType());
-                        }
-                        // Mapowanie temperature
-                        Double temp = request.getTemperature() != null ? request.getTemperature() : request.getTemperatureC();
-                        if (temp != null) {
-                            aquarium.setTemperatureC(temp);
+                            saveParameterHistory(aquarium, user, "name", oldName, request.getName(), "Zmiana nazwy akwarium");
                         }
                         
                         // Mapowanie waterType
                         String waterType = request.getWaterType();
                         if (waterType != null) {
+                            String oldWaterType = aquarium.getWaterType();
                             if (waterType.equals("freshwater")) {
                                 waterType = "Słodkowodna";
                             } else if (waterType.equals("saltwater")) {
                                 waterType = "Słonowodna";
                             }
                             aquarium.setWaterType(waterType);
+                            saveParameterHistory(aquarium, user, "water_type", oldWaterType, waterType, "Zmiana typu wody");
+                        }
+                        
+                        // Mapowanie temperature
+                        Double temp = request.getTemperature() != null ? request.getTemperature() : request.getTemperatureC();
+                        if (temp != null) {
+                            String oldTemp = String.valueOf(aquarium.getTemperatureC());
+                            aquarium.setTemperatureC(temp);
+                            saveParameterHistory(aquarium, user, "temperature", oldTemp, String.valueOf(temp), "Zmiana temperatury");
                         }
                         
                         if (request.getBiotope() != null) {
+                            String oldBiotope = aquarium.getBiotope();
                             aquarium.setBiotope(request.getBiotope());
+                            saveParameterHistory(aquarium, user, "biotope", oldBiotope, request.getBiotope(), "Zmiana biotopu");
                         }
+                        
                         if (request.getPh() != null) {
+                            String oldPh = aquarium.getPh() != null ? String.valueOf(aquarium.getPh()) : null;
                             aquarium.setPh(request.getPh());
+                            saveParameterHistory(aquarium, user, "ph", oldPh, String.valueOf(request.getPh()), "Zmiana pH");
                         }
                         
                         // Mapowanie hardness
                         Integer hardness = request.getHardness() != null ? request.getHardness() : request.getHardnessDGH();
                         if (hardness != null) {
+                            String oldHardness = aquarium.getHardnessDGH() != null ? String.valueOf(aquarium.getHardnessDGH()) : null;
                             aquarium.setHardnessDGH(hardness);
+                            saveParameterHistory(aquarium, user, "hardness", oldHardness, String.valueOf(hardness), "Zmiana twardości wody");
                         }
                         
                         if (request.getDescription() != null) {
@@ -231,7 +336,9 @@ public class AquariumController {
                         // Mapowanie volume
                         Integer volume = request.getVolume() != null ? request.getVolume() : request.getVolumeLiters();
                         if (volume != null) {
+                            String oldVolume = String.valueOf(aquarium.getVolumeLiters());
                             aquarium.setVolumeLiters(volume);
+                            saveParameterHistory(aquarium, user, "volume", oldVolume, String.valueOf(volume), "Zmiana objętości akwarium");
                         }
 
                         aquarium = aquariumRepository.save(aquarium);
@@ -308,8 +415,7 @@ public class AquariumController {
             
             return ResponseEntity.ok(Map.of("aquarium", response, "logEntry", createLogEntryResponseDto(logEntry)));
         } catch (Exception e) {
-            e.printStackTrace();
-            System.err.println("Error in addFishToAquarium: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+            logger.error("Failed to add fish to aquarium", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Failed to add fish: " + e.getMessage(), 
                                  "details", e.getClass().getSimpleName()));
@@ -344,9 +450,14 @@ public class AquariumController {
                 aquariumFishRepository.save(aquariumFish);
             } else if (newCount != null && newCount <= 0) {
                 aquariumFishRepository.delete(aquariumFish);
+                aquariumFishRepository.flush(); // Wymusza zapis usunięcia do bazy
+                entityManager.refresh(aquarium); // Odświeża obiekt aquarium z bazy
             }
             
-            aquarium = aquariumRepository.findById(aquariumId).orElse(aquarium);
+            // Pobierz świeży obiekt tylko jeśli nie został odświeżony
+            if (newCount == null || newCount > 0) {
+                aquarium = aquariumRepository.findById(aquariumId).orElse(aquarium);
+            }
             AquariumResponseDto response = new AquariumResponseDto(aquarium, validationService);
             
             // Create log entry
@@ -368,16 +479,22 @@ public class AquariumController {
             Long aquariumId = IdMapper.fromAquariumId(id);
             Long fId = IdMapper.fromFishId(fishId);
             if (aquariumId == null || fId == null) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Invalid ID format"));
+                System.out.println("DEBUG: Invalid ID format - aquariumId: " + aquariumId + ", fishId: " + fishId + ", fId: " + fId);
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid ID format", "details", "aquariumId: " + aquariumId + ", fishId: " + fishId + ", fId: " + fId));
             }
             
+            System.out.println("DEBUG: Removing fish - aquariumId: " + aquariumId + ", fId: " + fId);
             Aquarium aquarium = aquariumRepository.findById(aquariumId)
                     .orElseThrow(() -> new RuntimeException("Aquarium not found"));
             
-            AquariumFish aquariumFish = aquarium.getFishInAquarium().stream()
-                    .filter(af -> af.getFishSpecies() != null && af.getFishSpecies().getId().equals(fId))
-                    .findFirst()
-                    .orElseThrow(() -> new RuntimeException("Fish not found in aquarium"));
+            // Użyj repository zamiast stream() aby uniknąć problemów z lazy loading
+            System.out.println("DEBUG: Searching for AquariumFish with aquariumId: " + aquariumId + ", fishSpeciesId: " + fId);
+            AquariumFish aquariumFish = aquariumFishRepository.findByAquariumIdAndFishSpeciesId(aquariumId, fId)
+                    .orElseThrow(() -> {
+                        System.out.println("DEBUG: Fish not found in aquarium - aquariumId: " + aquariumId + ", fishSpeciesId: " + fId);
+                        return new RuntimeException("Fish not found in aquarium");
+                    });
+            System.out.println("DEBUG: Found AquariumFish: " + aquariumFish.getId() + ", count: " + aquariumFish.getFishCount());
             
             User user = aquarium.getOwner() != null ? aquarium.getOwner() : getOrCreateDefaultUser();
             FishSpecies fishSpecies = aquariumFish.getFishSpecies();
@@ -385,11 +502,12 @@ public class AquariumController {
             if (count != null && count < aquariumFish.getFishCount()) {
                 aquariumFish.setFishCount(aquariumFish.getFishCount() - count);
                 aquariumFishRepository.save(aquariumFish);
+                aquarium = aquariumRepository.findById(aquariumId).orElse(aquarium);
             } else {
                 aquariumFishRepository.delete(aquariumFish);
+                aquariumFishRepository.flush(); // Wymusza zapis usunięcia do bazy
+                entityManager.refresh(aquarium); // Odświeża obiekt aquarium z bazy (aktualizuje kolekcję fishInAquarium)
             }
-            
-            aquarium = aquariumRepository.findById(aquariumId).orElse(aquarium);
             AquariumResponseDto response = new AquariumResponseDto(aquarium, validationService);
             
             // Create log entry
@@ -479,9 +597,14 @@ public class AquariumController {
                 aquariumPlantRepository.save(aquariumPlant);
             } else if (newCount != null && newCount <= 0) {
                 aquariumPlantRepository.delete(aquariumPlant);
+                aquariumPlantRepository.flush(); // Wymusza zapis usunięcia do bazy
+                entityManager.refresh(aquarium); // Odświeża obiekt aquarium z bazy
             }
             
-            aquarium = aquariumRepository.findById(aquariumId).orElse(aquarium);
+            // Pobierz świeży obiekt tylko jeśli nie został odświeżony
+            if (newCount == null || newCount > 0) {
+                aquarium = aquariumRepository.findById(aquariumId).orElse(aquarium);
+            }
             AquariumResponseDto response = new AquariumResponseDto(aquarium, validationService);
             
             // Create log entry
@@ -518,11 +641,12 @@ public class AquariumController {
             if (count != null && count < aquariumPlant.getPlantCount()) {
                 aquariumPlant.setPlantCount(aquariumPlant.getPlantCount() - count);
                 aquariumPlantRepository.save(aquariumPlant);
+                aquarium = aquariumRepository.findById(aquariumId).orElse(aquarium);
             } else {
                 aquariumPlantRepository.delete(aquariumPlant);
+                aquariumPlantRepository.flush(); // Wymusza zapis usunięcia do bazy
+                entityManager.refresh(aquarium); // Odświeża obiekt aquarium z bazy (aktualizuje kolekcję plantsInAquarium)
             }
-            
-            aquarium = aquariumRepository.findById(aquariumId).orElse(aquarium);
             AquariumResponseDto response = new AquariumResponseDto(aquarium, validationService);
             
             // Create log entry
