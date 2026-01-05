@@ -392,11 +392,20 @@ public class AquariumController {
             User user = aquarium.getOwner() != null ? aquarium.getOwner() : getOrCreateDefaultUser();
             int count = request.getCount() != null ? request.getCount() : 1;
             
-            AquariumFish existingAquariumFish = aquariumFishRepository.findByAquariumIdAndFishSpeciesId(aquariumId, fishId).orElse(null);
+            // Zwraca listę, ponieważ mogą być duplikaty w bazie (przed dodaniem unique constraint)
+            List<AquariumFish> existingList = aquariumFishRepository.findByAquariumIdAndFishSpeciesId(aquariumId, fishId);
             
-            if (existingAquariumFish != null) {
-                existingAquariumFish.setFishCount(existingAquariumFish.getFishCount() + count);
-                aquariumFishRepository.save(existingAquariumFish);
+            if (!existingList.isEmpty()) {
+                // Jeśli są duplikaty, połącz je (usuń wszystkie i utwórz jeden z zsumowanym count)
+                int totalCount = existingList.stream().mapToInt(AquariumFish::getFishCount).sum();
+                aquariumFishRepository.deleteAll(existingList);
+                aquariumFishRepository.flush();
+                
+                AquariumFish newAquariumFish = new AquariumFish();
+                newAquariumFish.setAquarium(aquarium);
+                newAquariumFish.setFishSpecies(fishSpecies);
+                newAquariumFish.setFishCount(totalCount + count);
+                aquariumFishRepository.save(newAquariumFish);
             } else {
                 AquariumFish aquariumFish = new AquariumFish();
                 aquariumFish.setAquarium(aquarium);
@@ -479,35 +488,46 @@ public class AquariumController {
             Long aquariumId = IdMapper.fromAquariumId(id);
             Long fId = IdMapper.fromFishId(fishId);
             if (aquariumId == null || fId == null) {
-                System.out.println("DEBUG: Invalid ID format - aquariumId: " + aquariumId + ", fishId: " + fishId + ", fId: " + fId);
-                return ResponseEntity.badRequest().body(Map.of("error", "Invalid ID format", "details", "aquariumId: " + aquariumId + ", fishId: " + fishId + ", fId: " + fId));
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid ID format"));
             }
             
-            System.out.println("DEBUG: Removing fish - aquariumId: " + aquariumId + ", fId: " + fId);
             Aquarium aquarium = aquariumRepository.findById(aquariumId)
                     .orElseThrow(() -> new RuntimeException("Aquarium not found"));
             
             // Użyj repository zamiast stream() aby uniknąć problemów z lazy loading
-            System.out.println("DEBUG: Searching for AquariumFish with aquariumId: " + aquariumId + ", fishSpeciesId: " + fId);
-            AquariumFish aquariumFish = aquariumFishRepository.findByAquariumIdAndFishSpeciesId(aquariumId, fId)
-                    .orElseThrow(() -> {
-                        System.out.println("DEBUG: Fish not found in aquarium - aquariumId: " + aquariumId + ", fishSpeciesId: " + fId);
-                        return new RuntimeException("Fish not found in aquarium");
-                    });
-            System.out.println("DEBUG: Found AquariumFish: " + aquariumFish.getId() + ", count: " + aquariumFish.getFishCount());
+            // Zwraca listę, ponieważ mogą być duplikaty w bazie (przed dodaniem unique constraint)
+            List<AquariumFish> aquariumFishList = aquariumFishRepository.findByAquariumIdAndFishSpeciesId(aquariumId, fId);
+            
+            if (aquariumFishList.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Fish not found in aquarium"));
+            }
+            
+            // Jeśli są duplikaty, połącz je (zsumuj count) - ale w rzeczywistości usuniemy wszystkie
+            int totalCount = aquariumFishList.stream().mapToInt(AquariumFish::getFishCount).sum();
+            FishSpecies fishSpecies = aquariumFishList.get(0).getFishSpecies(); // Użyj pierwszego do pobrania fishSpecies
             
             User user = aquarium.getOwner() != null ? aquarium.getOwner() : getOrCreateDefaultUser();
-            FishSpecies fishSpecies = aquariumFish.getFishSpecies();
             
-            if (count != null && count < aquariumFish.getFishCount()) {
-                aquariumFish.setFishCount(aquariumFish.getFishCount() - count);
-                aquariumFishRepository.save(aquariumFish);
-                aquarium = aquariumRepository.findById(aquariumId).orElse(aquarium);
+            if (count != null && count < totalCount) {
+                // Zmniejsz count - trzeba to zrobić na pierwszym rekordzie i usunąć resztę
+                // LUB lepiej: usuń wszystkie duplikaty i utwórz jeden nowy rekord z zaktualizowanym count
+                // Na razie uproszczmy: usuń wszystkie i utwórz nowy z zmniejszonym count
+                aquariumFishRepository.deleteAll(aquariumFishList);
+                aquariumFishRepository.flush();
+                
+                AquariumFish newAquariumFish = new AquariumFish();
+                newAquariumFish.setAquarium(aquarium);
+                newAquariumFish.setFishSpecies(fishSpecies);
+                newAquariumFish.setFishCount(totalCount - count);
+                aquariumFishRepository.save(newAquariumFish);
+                aquariumFishRepository.flush();
             } else {
-                aquariumFishRepository.delete(aquariumFish);
+                // Usuń wszystkie rekordy (duplikaty)
+                aquariumFishRepository.deleteAll(aquariumFishList);
                 aquariumFishRepository.flush(); // Wymusza zapis usunięcia do bazy
-                entityManager.refresh(aquarium); // Odświeża obiekt aquarium z bazy (aktualizuje kolekcję fishInAquarium)
             }
+            
+            entityManager.refresh(aquarium); // Odświeża obiekt aquarium z bazy (aktualizuje kolekcję fishInAquarium)
             AquariumResponseDto response = new AquariumResponseDto(aquarium, validationService);
             
             // Create log entry

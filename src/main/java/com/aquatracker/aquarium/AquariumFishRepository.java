@@ -9,7 +9,7 @@ import java.util.Optional;
 @Repository
 public interface AquariumFishRepository extends JpaRepository<AquariumFish, Long> {
     List<AquariumFish> findByAquariumId(Long aquariumId);
-    Optional<AquariumFish> findByAquariumIdAndFishSpeciesId(Long aquariumId, Long fishSpeciesId);
+    List<AquariumFish> findByAquariumIdAndFishSpeciesId(Long aquariumId, Long fishSpeciesId);
     void deleteByAquariumIdAndFishSpeciesId(Long aquariumId, Long fishSpeciesId);
 }
 
