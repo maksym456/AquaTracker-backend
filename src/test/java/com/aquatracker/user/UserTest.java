@@ -4,22 +4,23 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
-import java.util.Set;
-
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
 import java.time.LocalDateTime;
+import java.util.Set;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class UserTest {
 
     private static Validator validator;
 
-@BeforeAll
-static void setUpValidator() {
-    ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
-    validator = factory.getValidator();
-}
+    @BeforeAll
+    static void setUpValidator() {
+        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+        validator = factory.getValidator();
+    }
 
     @Test
     void shouldSetAndGetAllBasicFieldsCorrectly() {
@@ -27,60 +28,12 @@ static void setUpValidator() {
         user.setId(1L);
         user.setUsername("janek123");
         user.setEmail("janek@example.com");
-        user.setPassword("superTajneHaslo123");
         user.setCreatedAt(LocalDateTime.of(2025, 12, 29, 12, 0));
+
         assertThat(user.getId()).isEqualTo(1L);
         assertThat(user.getUsername()).isEqualTo("janek123");
         assertThat(user.getEmail()).isEqualTo("janek@example.com");
-        assertThat(user.getPassword()).isEqualTo("superTajneHaslo123");
         assertThat(user.getCreatedAt()).isEqualTo(LocalDateTime.of(2025, 12, 29, 12, 0));
-    }
-
-    @Test
-    void shouldUseDefaultValuesForSettingsWhenNull() {
-        User user = new User();
-        assertThat(user.getSettingsLanguage()).isEqualTo("pl");
-        assertThat(user.getSettingsTheme()).isEqualTo("light");
-        assertThat(user.getSettingsSessionLengthMinutes()).isEqualTo(60);
-        assertThat(user.getSettingsDataSource()).isEqualTo("production");
-    }
-
-    @Test
-    void shouldAllowOverridingDefaultSettings() {
-        User user = new User();
-        user.setSettingsLanguage("en");
-        user.setSettingsTheme("dark");
-        user.setSettingsSessionLengthMinutes(120);
-        user.setSettingsDataSource("test");
-        assertThat(user.getSettingsLanguage()).isEqualTo("en");
-        assertThat(user.getSettingsTheme()).isEqualTo("dark");
-        assertThat(user.getSettingsSessionLengthMinutes()).isEqualTo(120);
-        assertThat(user.getSettingsDataSource()).isEqualTo("test");
-    }
-
-    @Test
-    void shouldMixCustomAndDefaultSettings() {
-        User user = new User();
-        user.setSettingsLanguage("de");
-        user.setSettingsSessionLengthMinutes(30);
-        assertThat(user.getSettingsLanguage()).isEqualTo("de");
-        assertThat(user.getSettingsTheme()).isEqualTo("light"); 
-        assertThat(user.getSettingsSessionLengthMinutes()).isEqualTo(30);
-        assertThat(user.getSettingsDataSource()).isEqualTo("production");  
-    }
-
-    @Test
-    void shouldHaveCorrectDefaultValuesForNewUser() {
-        User user = new User();
-        assertThat(user.getId()).isNull();
-        assertThat(user.getUsername()).isNull();
-        assertThat(user.getEmail()).isNull();
-        assertThat(user.getPassword()).isNull();
-        assertThat(user.getCreatedAt()).isNull();
-        assertThat(user.getSettingsLanguage()).isEqualTo("pl");
-        assertThat(user.getSettingsTheme()).isEqualTo("light");
-        assertThat(user.getSettingsSessionLengthMinutes()).isEqualTo(60);
-        assertThat(user.getSettingsDataSource()).isEqualTo("production");
     }
 
     @Test
@@ -88,61 +41,37 @@ static void setUpValidator() {
         User user = new User();
         user.setUsername("validuser");
         user.setEmail("valid@example.com");
-        user.setPassword("securepass123");  // Dłuższe niż 8 znaków
-    
+
         Set<ConstraintViolation<User>> violations = validator.validate(user);
-        assertThat(violations).isEmpty();  // Brak błędów – dane dobre
+        assertThat(violations).isEmpty();
     }
-    
+
     @Test
     void shouldFailValidationWhenUsernameBlank() {
         User user = new User();
         user.setEmail("valid@example.com");
-        user.setPassword("securepass123");
+
         Set<ConstraintViolation<User>> violations = validator.validate(user);
         assertThat(violations).hasSize(1);
         assertThat(violations.iterator().next().getMessage()).contains("wymagana");
     }
-    
+
     @Test
     void shouldFailValidationWhenEmailInvalid() {
         User user = new User();
         user.setUsername("validuser");
-        user.setEmail("invalid-email");  // Brak @, niepoprawny format
-        user.setPassword("securepass123");
+        user.setEmail("invalid-email");
+
         Set<ConstraintViolation<User>> violations = validator.validate(user);
         assertThat(violations).hasSize(1);
         assertThat(violations.iterator().next().getMessage()).contains("poprawny");
     }
-    
-    @Test
-    void shouldFailValidationWhenPasswordTooShort() {
-        User user = new User();
-        user.setUsername("validuser");
-        user.setEmail("valid@example.com");
-        user.setPassword("short");  
-        Set<ConstraintViolation<User>> violations = validator.validate(user);
-        assertThat(violations).hasSize(1);
-        assertThat(violations.iterator().next().getMessage()).contains("co najmniej 8");
-    }
-    
+
     @Test
     void shouldFailWithMultipleViolations() {
         User user = new User();
-        Set<ConstraintViolation<User>> violations = validator.validate(user);
-        assertThat(violations).hasSize(3);  
-    }
 
-    @Test
-    void shouldAllowSettingNullForOverridableSettings() {
-        User user = new User();
-        user.setSettingsLanguage(null);
-        user.setSettingsTheme(null);
-        user.setSettingsSessionLengthMinutes(null);
-        user.setSettingsDataSource(null);
-        assertThat(user.getSettingsLanguage()).isEqualTo("pl");
-        assertThat(user.getSettingsTheme()).isEqualTo("light");
-        assertThat(user.getSettingsSessionLengthMinutes()).isEqualTo(60);
-        assertThat(user.getSettingsDataSource()).isEqualTo("production");
+        Set<ConstraintViolation<User>> violations = validator.validate(user);
+        assertThat(violations).hasSize(2);  
     }
 }
