@@ -19,7 +19,29 @@ public class Plant {
     private double phMax;
     private int ghMin;
     private int ghMax;
+    private String lightRequirements; // "bez znaczenia", "słabe", "umiarkowane", "mocne"
+    private String co2Requirements; // "brak", "CO2", "Fe", "CO2, Fe", "Fe, P, NO3", etc.
+    private String difficulty; // "łatwa", "średnia", "trudna"
     private String iconName;
+
+    public Plant() {}
+
+    public Plant(String name, String species, String biotope, int tempMinC, int tempMaxC,
+                 double phMin, double phMax, int ghMin, int ghMax,
+                 String lightRequirements, String co2Requirements, String difficulty) {
+        this.name = name;
+        this.species = species != null ? species : name;
+        this.biotope = biotope;
+        this.tempMinC = tempMinC;
+        this.tempMaxC = tempMaxC;
+        this.phMin = phMin;
+        this.phMax = phMax;
+        this.ghMin = ghMin;
+        this.ghMax = ghMax;
+        this.lightRequirements = lightRequirements;
+        this.co2Requirements = co2Requirements;
+        this.difficulty = difficulty;
+    }
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -41,6 +63,12 @@ public class Plant {
     public void setGhMin(int ghMin) { this.ghMin = ghMin; }
     public int getGhMax() { return ghMax; }
     public void setGhMax(int ghMax) { this.ghMax = ghMax; }
+    public String getLightRequirements() { return lightRequirements; }
+    public void setLightRequirements(String lightRequirements) { this.lightRequirements = lightRequirements; }
+    public String getCo2Requirements() { return co2Requirements; }
+    public void setCo2Requirements(String co2Requirements) { this.co2Requirements = co2Requirements; }
+    public String getDifficulty() { return difficulty; }
+    public void setDifficulty(String difficulty) { this.difficulty = difficulty; }
     public String getIconName() { return iconName != null ? iconName : ""; }
     public void setIconName(String iconName) { this.iconName = iconName; }
 
