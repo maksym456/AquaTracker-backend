@@ -1,7 +1,6 @@
 package com.aquatracker.aquarium;
 
 import com.aquatracker.fish.FishInAquariumDto;
-import com.aquatracker.common.IdMapper;
 import com.aquatracker.plant.PlantInAquariumDto;
 
 import java.time.LocalDateTime;
@@ -9,17 +8,17 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class AquariumResponseDto {
-    private String id;
-    private String ownerId;
+    private Long id;
+    private String ownerId; // UUID (String) - TODO: zmienić na UUID gdy będzie implementacja
     private String name;
     private String description;
-    private Integer volume; // zmienione z volumeLiters
+    private Integer volumeLiters;
     private String waterType;
-    private Double temperature; // zmienione z temperatureC
+    private Double temperatureC;
     private String biotope;
     private Double ph;
-    private Integer hardness; // zmienione z hardnessDGH
-    private List<FishInAquariumDto> fishes; // zmienione z fish
+    private Integer hardnessDGH;
+    private List<FishInAquariumDto> fish; // OpenAPI: fish (nie fishes)
     private List<PlantInAquariumDto> plants;
     private AquariumStatusDto status;
     private LocalDateTime createdAt;
@@ -27,34 +26,35 @@ public class AquariumResponseDto {
     public AquariumResponseDto() {}
 
     public AquariumResponseDto(Aquarium aquarium, AquariumValidationService validationService) {
-        this.id = IdMapper.toAquariumId(aquarium.getId());
-        this.ownerId = aquarium.getOwner() != null ? IdMapper.toUserId(aquarium.getOwner().getId()) : null;
+        this.id = aquarium.getId(); // Long ID bez prefiksu
+        // TODO: ownerId powinno być UUID z cognitoSub, na razie używamy Long ID jako string
+        this.ownerId = aquarium.getOwner() != null ? aquarium.getOwner().getId().toString() : null;
         this.name = aquarium.getName();
         this.description = aquarium.getDescription();
-        this.volume = aquarium.getVolumeLiters(); // mapowanie volumeLiters -> volume
+        this.volumeLiters = aquarium.getVolumeLiters();
         this.waterType = aquarium.getWaterType();
-        this.temperature = aquarium.getTemperatureC(); // mapowanie temperatureC -> temperature
+        this.temperatureC = aquarium.getTemperatureC();
         this.biotope = aquarium.getBiotope();
         this.ph = aquarium.getPh();
-        this.hardness = aquarium.getHardnessDGH(); // mapowanie hardnessDGH -> hardness
+        this.hardnessDGH = aquarium.getHardnessDGH();
         this.createdAt = aquarium.getCreatedAt();
         
         try {
-            this.fishes = aquarium.getFishInAquarium() != null && !aquarium.getFishInAquarium().isEmpty()
+            this.fish = aquarium.getFishInAquarium() != null && !aquarium.getFishInAquarium().isEmpty()
                 ? aquarium.getFishInAquarium().stream()
                     .filter(af -> af != null && af.getFishSpecies() != null)
-                    .map(af -> new FishInAquariumDto(IdMapper.toFishId(af.getFishSpecies().getId()), af.getFishCount()))
+                    .map(af -> new FishInAquariumDto(af.getFishSpecies().getId(), af.getFishCount()))
                     .collect(Collectors.toList())
                 : List.of();
         } catch (Exception e) {
-            this.fishes = List.of();
+            this.fish = List.of();
         }
             
         try {
             this.plants = aquarium.getPlantsInAquarium() != null && !aquarium.getPlantsInAquarium().isEmpty()
                 ? aquarium.getPlantsInAquarium().stream()
                     .filter(ap -> ap != null && ap.getPlant() != null)
-                    .map(ap -> new PlantInAquariumDto(IdMapper.toPlantId(ap.getPlant().getId()), ap.getPlantCount()))
+                    .map(ap -> new PlantInAquariumDto(ap.getPlant().getId(), ap.getPlantCount()))
                     .collect(Collectors.toList())
                 : List.of();
         } catch (Exception e) {
@@ -73,11 +73,11 @@ public class AquariumResponseDto {
         this(aquarium, null);
     }
 
-    public String getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -105,12 +105,12 @@ public class AquariumResponseDto {
         this.description = description;
     }
 
-    public Integer getVolume() {
-        return volume;
+    public Integer getVolumeLiters() {
+        return volumeLiters;
     }
 
-    public void setVolume(Integer volume) {
-        this.volume = volume;
+    public void setVolumeLiters(Integer volumeLiters) {
+        this.volumeLiters = volumeLiters;
     }
 
     public String getWaterType() {
@@ -121,12 +121,12 @@ public class AquariumResponseDto {
         this.waterType = waterType;
     }
 
-    public Double getTemperature() {
-        return temperature;
+    public Double getTemperatureC() {
+        return temperatureC;
     }
 
-    public void setTemperature(Double temperature) {
-        this.temperature = temperature;
+    public void setTemperatureC(Double temperatureC) {
+        this.temperatureC = temperatureC;
     }
 
     public String getBiotope() {
@@ -145,20 +145,20 @@ public class AquariumResponseDto {
         this.ph = ph;
     }
 
-    public Integer getHardness() {
-        return hardness;
+    public Integer getHardnessDGH() {
+        return hardnessDGH;
     }
 
-    public void setHardness(Integer hardness) {
-        this.hardness = hardness;
+    public void setHardnessDGH(Integer hardnessDGH) {
+        this.hardnessDGH = hardnessDGH;
     }
 
-    public List<FishInAquariumDto> getFishes() {
-        return fishes;
+    public List<FishInAquariumDto> getFish() {
+        return fish;
     }
 
-    public void setFishes(List<FishInAquariumDto> fishes) {
-        this.fishes = fishes;
+    public void setFish(List<FishInAquariumDto> fish) {
+        this.fish = fish;
     }
 
     public List<PlantInAquariumDto> getPlants() {

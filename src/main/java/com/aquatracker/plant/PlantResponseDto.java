@@ -1,9 +1,7 @@
 package com.aquatracker.plant;
 
-import com.aquatracker.common.IdMapper;
-
 public class PlantResponseDto {
-    private String id;
+    private Long id;
     private String name;
     private String temperature;
     private String biotope;
@@ -14,7 +12,7 @@ public class PlantResponseDto {
     public PlantResponseDto() {}
 
     public PlantResponseDto(Plant plant) {
-        this.id = IdMapper.toPlantId(plant.getId());
+        this.id = plant.getId(); // Long ID bez prefiksu
         this.name = plant.getName();
         this.temperature = plant.getTemperature();
         this.biotope = plant.getBiotope();
@@ -23,11 +21,11 @@ public class PlantResponseDto {
         this.iconName = plant.getIconName();
     }
 
-    public String getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
