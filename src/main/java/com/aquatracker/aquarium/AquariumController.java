@@ -1,5 +1,6 @@
 package com.aquatracker.aquarium;
 
+import com.aquatracker.common.ErrorResponseDto;
 import com.aquatracker.common.IdMapper;
 import com.aquatracker.fish.FishInAquariumDto;
 import com.aquatracker.fish.FishSpecies;
@@ -170,46 +171,11 @@ public class AquariumController {
      * Jeśli id jest w formacie aquarium ID (aq_123) - zwraca pojedyncze akwarium
      * Jeśli id jest userId (liczba lub u_123) - zwraca listę akwariów użytkownika
      */
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getAquariumById(@PathVariable String id) {
-        // Najpierw sprawdź czy to aquarium ID (format aq_123)
-        Long aquariumId = IdMapper.fromAquariumId(id);
-        if (aquariumId != null) {
-            return aquariumRepository.findById(aquariumId)
-                    .map(aquarium -> ResponseEntity.ok(new AquariumResponseDto(aquarium, validationService)))
-                    .orElse(ResponseEntity.notFound().build());
-        }
-
-        // Jeśli nie jest aquarium ID, sprawdź czy to userId (dla kompatybilności z mock)
-        // Mock używa: GET /api/v1/aquariums/{userId}
-        Long userIdLong = IdMapper.fromUserId(id);
-        if (userIdLong == null) {
-            try {
-                // Spróbuj jako userId (liczba)
-                userIdLong = Long.parseLong(id);
-                // Sprawdź czy istnieje użytkownik z tym ID
-                if (userRepository.existsById(userIdLong)) {
-                    // To jest userId, zwróć akwaria użytkownika
-                    List<Aquarium> aquariums = aquariumRepository.findByOwnerId(userIdLong);
-                    List<AquariumResponseDto> aquariumDtos = aquariums.stream()
-                            .map(aquarium -> new AquariumResponseDto(aquarium, validationService))
-                            .collect(Collectors.toList());
-                    return ResponseEntity.ok(aquariumDtos);
-                }
-            } catch (NumberFormatException e) {
-                // Nie jest liczbą, zwróć błąd
-                return ResponseEntity.badRequest().body(Map.of("error", "Invalid ID format"));
-            }
-        } else {
-            // To jest userId w formacie u_123
-            List<Aquarium> aquariums = aquariumRepository.findByOwnerId(userIdLong);
-            List<AquariumResponseDto> aquariumDtos = aquariums.stream()
-                    .map(aquarium -> new AquariumResponseDto(aquarium, validationService))
-                    .collect(Collectors.toList());
-            return ResponseEntity.ok(aquariumDtos);
-        }
-
-        return ResponseEntity.badRequest().body(Map.of("error", "Invalid ID format"));
+    @GetMapping("/{aquariumId}")
+    public ResponseEntity<?> getAquariumById(@PathVariable Long aquariumId) {
+        return aquariumRepository.findById(aquariumId)
+                .map(aquarium -> ResponseEntity.ok(new AquariumResponseDto(aquarium, validationService)))
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
@@ -261,6 +227,11 @@ public class AquariumController {
             System.out.println("  Name: " + aquarium.getName());
             System.out.println("  Owner: " + (aquarium.getOwner() != null ? aquarium.getOwner().getEmail() : "null"));
 
+            // Create log entry for aquarium creation
+            User user = aquarium.getOwner() != null ? aquarium.getOwner() : getOrCreateDefaultUser();
+            LogEntry logEntry = createLogEntry(user, aquarium, "AQUARIUM_CREATED", "Utworzono akwarium", 
+                String.format("Akwarium '%s' zostało utworzone.", aquarium.getName()), null);
+
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(new AquariumResponseDto(aquarium, validationService));
         } catch (Exception e) {
@@ -271,13 +242,9 @@ public class AquariumController {
         }
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateAquarium(@PathVariable String id, @RequestBody AquariumRequestDto request) {
+    @PutMapping("/{aquariumId}")
+    public ResponseEntity<?> updateAquarium(@PathVariable Long aquariumId, @RequestBody AquariumRequestDto request) {
         try {
-            Long aquariumId = IdMapper.fromAquariumId(id);
-            if (aquariumId == null) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Invalid aquarium ID format"));
-            }
             return aquariumRepository.findById(aquariumId)
                     .map(aquarium -> {
                         User user = aquarium.getOwner() != null ? aquarium.getOwner() : getOrCreateDefaultUser();
@@ -351,36 +318,55 @@ public class AquariumController {
         }
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteAquarium(@PathVariable String id) {
+    @DeleteMapping("/{aquariumId}")
+    @Transactional
+    public ResponseEntity<?> deleteAquarium(@PathVariable Long aquariumId) {
         try {
-            Long aquariumId = IdMapper.fromAquariumId(id);
-            if (aquariumId == null) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Invalid aquarium ID format"));
-            }
-            if (aquariumRepository.existsById(aquariumId)) {
+            Aquarium aquarium = aquariumRepository.findById(aquariumId).orElse(null);
+            if (aquarium != null) {
+                // Create log entry before deletion (we need aquarium name for the log)
+                User user = aquarium.getOwner() != null ? aquarium.getOwner() : getOrCreateDefaultUser();
+                String aquariumName = aquarium.getName();
+                
+                // Set aquarium_id to null in log_entries before deleting aquarium
+                // This prevents foreign key constraint violation
+                List<LogEntry> logsToUpdate = logEntryRepository.findByAquarium_IdOrderByCreatedAtDesc(aquariumId);
+                for (LogEntry log : logsToUpdate) {
+                    log.setAquarium(null);
+                    logEntryRepository.save(log);
+                }
+                
+                // Create log entry for aquarium deletion
+                LogEntry logEntry = new LogEntry();
+                logEntry.setUser(user);
+                logEntry.setAquarium(null); // Set to null since aquarium will be deleted
+                logEntry.setAquariumName(aquariumName); // Store name for history
+                logEntry.setActionType("AQUARIUM_DELETED");
+                logEntry.setTitle("Usunięto akwarium");
+                logEntry.setMessage(String.format("Akwarium '%s' zostało usunięte.", aquariumName));
+                logEntry.setMetadata(null);
+                logEntry.setCreatedAt(LocalDateTime.now());
+                logEntryRepository.save(logEntry);
+                
+                // Now delete the aquarium
                 aquariumRepository.deleteById(aquariumId);
-                return ResponseEntity.ok(Map.of("message", "Aquarium deleted successfully"));
+                return ResponseEntity.noContent().build(); // 204 No Content zgodnie z OpenAPI
             } else {
                 return ResponseEntity.notFound().build();
             }
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to delete aquarium: " + e.getMessage()));
+                    .body(new ErrorResponseDto("InternalServerError", "Failed to delete aquarium: " + e.getMessage()));
         }
     }
 
-    @PostMapping("/{id}/fish")
+    @PostMapping("/{aquariumId}/fish")
     @Transactional
-    public ResponseEntity<?> addFishToAquarium(@PathVariable String id, @RequestBody AddFishRequest request) {
+    public ResponseEntity<?> addFishToAquarium(@PathVariable Long aquariumId, @RequestBody AddFishRequest request) {
         try {
-            Long aquariumId = IdMapper.fromAquariumId(id);
-            if (aquariumId == null) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Invalid aquarium ID format"));
-            }
-            Long fishId = IdMapper.fromFishId(request.getFishId());
+            Long fishId = request.getFishId();
             if (fishId == null) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Invalid fish ID format"));
+                return ResponseEntity.badRequest().body(Map.of("error", "Fish ID is required"));
             }
             
             Aquarium aquarium = aquariumRepository.findById(aquariumId)
@@ -418,7 +404,7 @@ public class AquariumController {
             AquariumResponseDto response = new AquariumResponseDto(aquarium, validationService);
             
             // Create log entry
-            String metadata = String.format("{\"fishId\":\"%s\",\"count\":%d}", request.getFishId(), count);
+            String metadata = String.format("{\"fishId\":%d,\"count\":%d}", request.getFishId(), count);
             LogEntry logEntry = createLogEntry(user, aquarium, "FISH_ADDED", "Dodano ryby", 
                 String.format("Dodano %d x %s.", count, fishSpecies.getName()), metadata);
             
@@ -431,23 +417,20 @@ public class AquariumController {
         }
     }
 
-    @PatchMapping("/{id}/fish/{fishId}")
+    @PatchMapping("/{aquariumId}/fish/{fishId}")
     @Transactional
-    public ResponseEntity<?> updateFishCount(@PathVariable String id, @PathVariable String fishId, @RequestBody Map<String, Integer> request) {
+    public ResponseEntity<?> updateFishCount(@PathVariable Long aquariumId, @PathVariable Long fishId, @RequestBody Map<String, Integer> request) {
         try {
-            Long aquariumId = IdMapper.fromAquariumId(id);
-            Long fId = IdMapper.fromFishId(fishId);
-            if (aquariumId == null || fId == null) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Invalid ID format"));
-            }
+            Long fId = fishId;
             
             Aquarium aquarium = aquariumRepository.findById(aquariumId)
                     .orElseThrow(() -> new RuntimeException("Aquarium not found"));
             
-            AquariumFish aquariumFish = aquarium.getFishInAquarium().stream()
-                    .filter(af -> af.getFishSpecies() != null && af.getFishSpecies().getId().equals(fId))
-                    .findFirst()
-                    .orElseThrow(() -> new RuntimeException("Fish not found in aquarium"));
+            List<AquariumFish> aquariumFishList = aquariumFishRepository.findByAquariumIdAndFishSpeciesId(aquariumId, fId);
+            if (aquariumFishList.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Fish not found in aquarium"));
+            }
+            AquariumFish aquariumFish = aquariumFishList.get(0); // Użyj pierwszego
             
             Integer newCount = request.get("count");
             User user = aquarium.getOwner() != null ? aquarium.getOwner() : getOrCreateDefaultUser();
@@ -470,7 +453,7 @@ public class AquariumController {
             AquariumResponseDto response = new AquariumResponseDto(aquarium, validationService);
             
             // Create log entry
-            String metadata = String.format("{\"fishId\":\"%s\",\"count\":%d}", fishId, newCount != null ? newCount : oldCount);
+            String metadata = String.format("{\"fishId\":%d,\"count\":%d}", fishId, newCount != null ? newCount : oldCount);
             LogEntry logEntry = createLogEntry(user, aquarium, "FISH_UPDATED", "Zmieniono ilość ryb", 
                 String.format("Zmieniono ilość %s na %d.", fishSpecies != null ? fishSpecies.getName() : "ryby", newCount != null ? newCount : oldCount), metadata);
             
@@ -481,15 +464,11 @@ public class AquariumController {
         }
     }
 
-    @DeleteMapping("/{id}/fish/{fishId}")
+    @DeleteMapping("/{aquariumId}/fish/{fishId}")
     @Transactional
-    public ResponseEntity<?> removeFishFromAquarium(@PathVariable String id, @PathVariable String fishId, @RequestParam(required = false) Integer count) {
+    public ResponseEntity<?> removeFishFromAquarium(@PathVariable Long aquariumId, @PathVariable Long fishId, @RequestParam(required = false) Integer count) {
         try {
-            Long aquariumId = IdMapper.fromAquariumId(id);
-            Long fId = IdMapper.fromFishId(fishId);
-            if (aquariumId == null || fId == null) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Invalid ID format"));
-            }
+            Long fId = fishId;
             
             Aquarium aquarium = aquariumRepository.findById(aquariumId)
                     .orElseThrow(() -> new RuntimeException("Aquarium not found"));
@@ -531,7 +510,7 @@ public class AquariumController {
             AquariumResponseDto response = new AquariumResponseDto(aquarium, validationService);
             
             // Create log entry
-            String metadata = String.format("{\"fishId\":\"%s\"}", fishId);
+            String metadata = String.format("{\"fishId\":%d}", fishId);
             LogEntry logEntry = createLogEntry(user, aquarium, "FISH_REMOVED", "Usunięto ryby", 
                 String.format("Usunięto %s.", fishSpecies != null ? fishSpecies.getName() : "ryby"), metadata);
             
@@ -542,17 +521,13 @@ public class AquariumController {
         }
     }
 
-    @PostMapping("/{id}/plants")
+    @PostMapping("/{aquariumId}/plants")
     @Transactional
-    public ResponseEntity<?> addPlantToAquarium(@PathVariable String id, @RequestBody AddPlantRequest request) {
+    public ResponseEntity<?> addPlantToAquarium(@PathVariable Long aquariumId, @RequestBody AddPlantRequest request) {
         try {
-            Long aquariumId = IdMapper.fromAquariumId(id);
-            if (aquariumId == null) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Invalid aquarium ID format"));
-            }
-            Long plantId = IdMapper.fromPlantId(request.getPlantId());
+            Long plantId = request.getPlantId();
             if (plantId == null) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Invalid plant ID format"));
+                return ResponseEntity.badRequest().body(Map.of("error", "Plant ID is required"));
             }
             
             Aquarium aquarium = aquariumRepository.findById(aquariumId)
@@ -580,7 +555,7 @@ public class AquariumController {
             AquariumResponseDto response = new AquariumResponseDto(aquarium, validationService);
             
             // Create log entry
-            String metadata = String.format("{\"plantId\":\"%s\",\"count\":%d}", request.getPlantId(), count);
+            String metadata = String.format("{\"plantId\":%d,\"count\":%d}", request.getPlantId(), count);
             LogEntry logEntry = createLogEntry(user, aquarium, "PLANT_ADDED", "Dodano rośliny", 
                 String.format("Dodano %d x %s.", count, plant.getName()), metadata);
             
@@ -591,15 +566,11 @@ public class AquariumController {
         }
     }
 
-    @PatchMapping("/{id}/plants/{plantId}")
+    @PatchMapping("/{aquariumId}/plants/{plantId}")
     @Transactional
-    public ResponseEntity<?> updatePlantCount(@PathVariable String id, @PathVariable String plantId, @RequestBody Map<String, Integer> request) {
+    public ResponseEntity<?> updatePlantCount(@PathVariable Long aquariumId, @PathVariable Long plantId, @RequestBody Map<String, Integer> request) {
         try {
-            Long aquariumId = IdMapper.fromAquariumId(id);
-            Long pId = IdMapper.fromPlantId(plantId);
-            if (aquariumId == null || pId == null) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Invalid ID format"));
-            }
+            Long pId = plantId;
             
             Aquarium aquarium = aquariumRepository.findById(aquariumId)
                     .orElseThrow(() -> new RuntimeException("Aquarium not found"));
@@ -628,7 +599,7 @@ public class AquariumController {
             AquariumResponseDto response = new AquariumResponseDto(aquarium, validationService);
             
             // Create log entry
-            String metadata = String.format("{\"plantId\":\"%s\",\"count\":%d}", plantId, newCount != null ? newCount : oldCount);
+            String metadata = String.format("{\"plantId\":%d,\"count\":%d}", plantId, newCount != null ? newCount : oldCount);
             LogEntry logEntry = createLogEntry(user, aquarium, "PLANT_UPDATED", "Zmieniono ilość roślin", 
                 String.format("Zmieniono ilość %s na %d.", plant != null ? plant.getName() : "rośliny", newCount != null ? newCount : oldCount), metadata);
             
@@ -639,15 +610,11 @@ public class AquariumController {
         }
     }
 
-    @DeleteMapping("/{id}/plants/{plantId}")
+    @DeleteMapping("/{aquariumId}/plants/{plantId}")
     @Transactional
-    public ResponseEntity<?> removePlantFromAquarium(@PathVariable String id, @PathVariable String plantId, @RequestParam(required = false) Integer count) {
+    public ResponseEntity<?> removePlantFromAquarium(@PathVariable Long aquariumId, @PathVariable Long plantId, @RequestParam(required = false) Integer count) {
         try {
-            Long aquariumId = IdMapper.fromAquariumId(id);
-            Long pId = IdMapper.fromPlantId(plantId);
-            if (aquariumId == null || pId == null) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Invalid ID format"));
-            }
+            Long pId = plantId;
             
             Aquarium aquarium = aquariumRepository.findById(aquariumId)
                     .orElseThrow(() -> new RuntimeException("Aquarium not found"));
@@ -670,7 +637,7 @@ public class AquariumController {
             AquariumResponseDto response = new AquariumResponseDto(aquarium, validationService);
             
             // Create log entry
-            String metadata = String.format("{\"plantId\":\"%s\"}", plantId);
+            String metadata = String.format("{\"plantId\":%d}", plantId);
             LogEntry logEntry = createLogEntry(user, aquarium, "PLANT_REMOVED", "Usunięto rośliny", 
                 String.format("Usunięto %s.", plant != null ? plant.getName() : "rośliny"), metadata);
             
@@ -681,13 +648,9 @@ public class AquariumController {
         }
     }
 
-    @PatchMapping("/{id}/parameters")
-    public ResponseEntity<?> updateAquariumParameters(@PathVariable String id, @RequestBody Map<String, Object> params) {
+    @PatchMapping("/{aquariumId}/parameters")
+    public ResponseEntity<?> updateAquariumParameters(@PathVariable Long aquariumId, @RequestBody Map<String, Object> params) {
         try {
-            Long aquariumId = IdMapper.fromAquariumId(id);
-            if (aquariumId == null) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Invalid aquarium ID format"));
-            }
             return aquariumRepository.findById(aquariumId)
                     .map(aquarium -> {
                         if (params.containsKey("temperatureC")) {
@@ -709,13 +672,9 @@ public class AquariumController {
         }
     }
 
-    @PostMapping("/{id}/status/recalculate")
-    public ResponseEntity<?> recalculateStatus(@PathVariable String id) {
+    @PostMapping("/{aquariumId}/status/recalculate")
+    public ResponseEntity<?> recalculateStatus(@PathVariable Long aquariumId) {
         try {
-            Long aquariumId = IdMapper.fromAquariumId(id);
-            if (aquariumId == null) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Invalid aquarium ID format"));
-            }
             return aquariumRepository.findById(aquariumId)
                     .map(aquarium -> {
                         AquariumStatusDto status = validationService.validateAquarium(aquarium);
@@ -733,8 +692,8 @@ public class AquariumController {
         return ResponseEntity.ok(Map.of("error", "JWT authentication not implemented yet"));
     }
 
-    @GetMapping("/{id}/stats")
-    public ResponseEntity<?> getAquariumStats(@PathVariable String id) {
+    @GetMapping("/{aquariumId}/stats")
+    public ResponseEntity<?> getAquariumStats(@PathVariable Long aquariumId) {
         return ResponseEntity.ok(Map.of("error", "JWT authentication not implemented yet"));
     }
 
@@ -782,21 +741,21 @@ public class AquariumController {
     }
 
     public static class AddFishRequest {
-        private String fishId;
+        private Long fishId;
         private Integer count;
 
-        public String getFishId() { return fishId; }
-        public void setFishId(String fishId) { this.fishId = fishId; }
+        public Long getFishId() { return fishId; }
+        public void setFishId(Long fishId) { this.fishId = fishId; }
         public Integer getCount() { return count; }
         public void setCount(Integer count) { this.count = count; }
     }
 
     public static class AddPlantRequest {
-        private String plantId;
+        private Long plantId;
         private Integer count;
 
-        public String getPlantId() { return plantId; }
-        public void setPlantId(String plantId) { this.plantId = plantId; }
+        public Long getPlantId() { return plantId; }
+        public void setPlantId(Long plantId) { this.plantId = plantId; }
         public Integer getCount() { return count; }
         public void setCount(Integer count) { this.count = count; }
     }

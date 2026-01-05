@@ -1,6 +1,6 @@
 package com.aquatracker.fish;
 import org.springframework.context.annotation.Profile;
-import com.aquatracker.common.IdMapper;
+import com.aquatracker.common.ErrorResponseDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,12 +28,8 @@ public class FishController {
                 .collect(Collectors.toList());
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getFishById(@PathVariable String id) {
-        Long fishId = IdMapper.fromFishId(id);
-        if (fishId == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Invalid fish ID format"));
-        }
+    @GetMapping("/{fishId}")
+    public ResponseEntity<?> getFishById(@PathVariable Long fishId) {
         return fishRepository.findById(fishId)
                 .map(fish -> ResponseEntity.ok(new FishResponseDto(fish)))
                 .orElse(ResponseEntity.notFound().build());
@@ -145,13 +141,9 @@ public class FishController {
         }
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateFish(@PathVariable String id, @RequestBody FishRequestDto request) {
+    @PutMapping("/{fishId}")
+    public ResponseEntity<?> updateFish(@PathVariable Long fishId, @RequestBody FishRequestDto request) {
         try {
-            Long fishId = IdMapper.fromFishId(id);
-            if (fishId == null) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Invalid fish ID format"));
-            }
             return fishRepository.findById(fishId)
                     .map(fish -> {
                         if (request.getName() != null && !request.getName().trim().isEmpty()) {
@@ -208,22 +200,18 @@ public class FishController {
         }
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteFish(@PathVariable String id) {
+    @DeleteMapping("/{fishId}")
+    public ResponseEntity<?> deleteFish(@PathVariable Long fishId) {
         try {
-            Long fishId = IdMapper.fromFishId(id);
-            if (fishId == null) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Invalid fish ID format"));
-            }
             if (fishRepository.existsById(fishId)) {
                 fishRepository.deleteById(fishId);
-                return ResponseEntity.ok(Map.of("message", "Fish deleted successfully"));
+                return ResponseEntity.noContent().build(); // 204 No Content zgodnie z OpenAPI
             } else {
                 return ResponseEntity.notFound().build();
             }
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to delete fish: " + e.getMessage()));
+                    .body(new ErrorResponseDto("InternalServerError", "Failed to delete fish: " + e.getMessage()));
         }
     }
 

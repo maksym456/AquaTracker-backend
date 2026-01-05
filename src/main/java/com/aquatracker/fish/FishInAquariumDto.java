@@ -1,21 +1,21 @@
 package com.aquatracker.fish;
 
 public class FishInAquariumDto {
-    private String fishId;
+    private Long fishId;
     private Integer count;
 
     public FishInAquariumDto() {}
 
-    public FishInAquariumDto(String fishId, Integer count) {
+    public FishInAquariumDto(Long fishId, Integer count) {
         this.fishId = fishId;
         this.count = count;
     }
 
-    public String getFishId() {
+    public Long getFishId() {
         return fishId;
     }
 
-    public void setFishId(String fishId) {
+    public void setFishId(Long fishId) {
         this.fishId = fishId;
     }
 

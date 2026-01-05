@@ -1,32 +1,29 @@
 package com.aquatracker.user;
 
-import com.aquatracker.common.IdMapper;
-
-import java.time.LocalDateTime;
+import java.util.UUID;
 
 public class UserResponseDto {
-    private String id;
+    private String id; // UUID
     private String username;
     private String email;
-    private String cognitoSub;
-    private LocalDateTime createdAt;
-    private String settingsLanguage;
-    private String settingsTheme;
-    private Integer settingsSessionLengthMinutes;
-    private String settingsDataSource;
+    private String language;
+    private String theme;
 
     public UserResponseDto() {}
 
     public UserResponseDto(User user) {
-        this.id = IdMapper.toUserId(user.getId());
+        // Używamy cognitoSub jako UUID, jeśli nie ma - generujemy UUID z Long ID (tymczasowe rozwiązanie)
+        if (user.getCognitoSub() != null && !user.getCognitoSub().isEmpty()) {
+            this.id = user.getCognitoSub();
+        } else {
+            // Tymczasowe: generujemy UUID z Long ID (nie jest to prawdziwy UUID, ale działa)
+            // W produkcji powinno się używać cognitoSub
+            this.id = UUID.nameUUIDFromBytes(user.getId().toString().getBytes()).toString();
+        }
         this.username = user.getUsername();
         this.email = user.getEmail();
-        this.cognitoSub = user.getCognitoSub();
-        this.createdAt = user.getCreatedAt();
-        this.settingsLanguage = user.getSettingsLanguage();
-        this.settingsTheme = user.getSettingsTheme();
-        this.settingsSessionLengthMinutes = user.getSettingsSessionLengthMinutes();
-        this.settingsDataSource = user.getSettingsDataSource();
+        this.language = user.getSettingsLanguage() != null ? user.getSettingsLanguage() : "pl";
+        this.theme = user.getSettingsTheme() != null ? user.getSettingsTheme() : "light";
     }
 
     public String getId() {
@@ -53,52 +50,20 @@ public class UserResponseDto {
         this.email = email;
     }
 
-    public String getCognitoSub() {
-        return cognitoSub;
+    public String getLanguage() {
+        return language;
     }
 
-    public void setCognitoSub(String cognitoSub) {
-        this.cognitoSub = cognitoSub;
+    public void setLanguage(String language) {
+        this.language = language;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
+    public String getTheme() {
+        return theme;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public String getSettingsLanguage() {
-        return settingsLanguage;
-    }
-
-    public void setSettingsLanguage(String settingsLanguage) {
-        this.settingsLanguage = settingsLanguage;
-    }
-
-    public String getSettingsTheme() {
-        return settingsTheme;
-    }
-
-    public void setSettingsTheme(String settingsTheme) {
-        this.settingsTheme = settingsTheme;
-    }
-
-    public Integer getSettingsSessionLengthMinutes() {
-        return settingsSessionLengthMinutes;
-    }
-
-    public void setSettingsSessionLengthMinutes(Integer settingsSessionLengthMinutes) {
-        this.settingsSessionLengthMinutes = settingsSessionLengthMinutes;
-    }
-
-    public String getSettingsDataSource() {
-        return settingsDataSource;
-    }
-
-    public void setSettingsDataSource(String settingsDataSource) {
-        this.settingsDataSource = settingsDataSource;
+    public void setTheme(String theme) {
+        this.theme = theme;
     }
 }
 
