@@ -8,12 +8,13 @@ servers:
   - url: http://localhost:3001/api/v1
     description: Local dev
 tags:
-  - name: Settings
+  - name: Users
   - name: Fish
   - name: Plants
   - name: Aquariums
   - name: Logs
   - name: Contacts
+
 components:
   schemas:
     LogCreateRequest:
@@ -34,20 +35,31 @@ components:
           type: object
           description: Optional structured data for the log entry
           additionalProperties: true
+
     UserId:
       type: string
       format: uuid
       description: UUIDv4 identifier
       example: "00000000-0000-4000-8000-000000000000"
+
+    NullableUserId:
+      type: string
+      format: uuid
+      nullable: true
+      description: Nullable UUIDv4 identifier
+      example: null
+
     Id:
       type: integer
       format: int64
       example: 123
+
     NullableId:
       type: integer
       format: int64
       nullable: true
       example: null
+
     ErrorResponse:
       type: object
       additionalProperties: false
@@ -73,43 +85,31 @@ components:
       required:
         - error
         - message
+
     Language:
       type: string
       enum:
         - pl
         - en
+
     Theme:
       type: string
       enum:
         - light
         - dark
+
     WaterType:
       type: string
       enum:
         - Słodkowodna
         - Słonawowodna
         - Słonowodna
-    UserSettings:
-      type: object
-      additionalProperties: false
-      properties:
-        language:
-          $ref: "#/components/schemas/Language"
-        theme:
-          $ref: "#/components/schemas/Theme"
-        dataSource:
-          type: string
-          example: production
-      required:
-        - language
-        - theme
-        - dataSource
     User:
       type: object
       additionalProperties: false
       properties:
         id:
-          $ref: "#/components/schemas/Id"
+          $ref: "#/components/schemas/UserId"
         username:
           type: string
           example: aquarist123
@@ -117,18 +117,17 @@ components:
           type: string
           format: email
           example: user@example.com
-        createdAt:
-          type: string
-          format: date-time
-          example: 2025-10-27T12:00:00Z
-        settings:
-          $ref: "#/components/schemas/UserSettings"
+        language:
+          $ref: "#/components/schemas/Language"
+        theme:
+          $ref: "#/components/schemas/Theme"
       required:
         - id
         - username
         - email
-        - createdAt
-        - settings
+        - language
+        - theme
+
     UserCreateRequest:
       type: object
       additionalProperties: false
@@ -144,12 +143,17 @@ components:
           type: string
           format: password
           example: StrongPassword123!
-        settings:
-          $ref: "#/components/schemas/UserSettings"
+        language:
+          $ref: "#/components/schemas/Language"
+        theme:
+          $ref: "#/components/schemas/Theme"
       required:
         - username
         - email
         - password
+        - language
+        - theme
+
     UserUpdateRequest:
       type: object
       additionalProperties: false
@@ -159,8 +163,11 @@ components:
         email:
           type: string
           format: email
-        settings:
-          $ref: "#/components/schemas/UserSettings"
+        language:
+          $ref: "#/components/schemas/Language"
+        theme:
+          $ref: "#/components/schemas/Theme"
+
     Fish:
       type: object
       additionalProperties: false
@@ -210,6 +217,7 @@ components:
         - minShoalSize
         - lifeSpan
         - iconName
+
     FishCreateRequest:
       type: object
       additionalProperties: false
@@ -246,6 +254,7 @@ components:
         - minShoalSize
         - lifeSpan
         - iconName
+
     FishUpdateRequest:
       type: object
       additionalProperties: false
@@ -271,6 +280,7 @@ components:
           type: string
         iconName:
           type: string
+
     Plant:
       type: object
       additionalProperties: false
@@ -303,6 +313,7 @@ components:
         - ph
         - hardnessDGH
         - iconName
+
     PlantCreateRequest:
       type: object
       additionalProperties: false
@@ -326,6 +337,7 @@ components:
         - ph
         - hardnessDGH
         - iconName
+
     PlantUpdateRequest:
       type: object
       additionalProperties: false
@@ -342,6 +354,7 @@ components:
           type: string
         iconName:
           type: string
+
     AquariumFishItem:
       type: object
       additionalProperties: false
@@ -355,6 +368,7 @@ components:
       required:
         - fishId
         - count
+
     AquariumPlantItem:
       type: object
       additionalProperties: false
@@ -368,6 +382,7 @@ components:
       required:
         - plantId
         - count
+
     StatusIssue:
       type: object
       additionalProperties: false
@@ -381,6 +396,7 @@ components:
       required:
         - type
         - message
+
     AquariumStatus:
       type: object
       additionalProperties: false
@@ -404,6 +420,7 @@ components:
         - level
         - issues
         - lastCheckedAt
+
     Aquarium:
       type: object
       additionalProperties: false
@@ -411,7 +428,7 @@ components:
         id:
           $ref: "#/components/schemas/Id"
         ownerId:
-          $ref: "#/components/schemas/Id"
+          $ref: "#/components/schemas/UserId"
         name:
           type: string
           example: Moje pierwsze akwarium
@@ -461,6 +478,7 @@ components:
         - plants
         - status
         - createdAt
+
     AquariumCreateRequest:
       type: object
       additionalProperties: false
@@ -498,8 +516,10 @@ components:
         - hardnessDGH
         - fish
         - plants
+
     AquariumUpdateRequest:
       $ref: "#/components/schemas/AquariumCreateRequest"
+
     AquariumParametersUpdateRequest:
       type: object
       additionalProperties: false
@@ -510,6 +530,7 @@ components:
           type: number
         hardnessDGH:
           type: number
+
     AddFishToAquariumRequest:
       type: object
       additionalProperties: false
@@ -522,6 +543,7 @@ components:
       required:
         - fishId
         - count
+
     UpdateFishCountRequest:
       type: object
       additionalProperties: false
@@ -531,6 +553,7 @@ components:
           minimum: 0
       required:
         - count
+
     AddPlantToAquariumRequest:
       type: object
       additionalProperties: false
@@ -543,6 +566,7 @@ components:
       required:
         - plantId
         - count
+
     UpdatePlantCountRequest:
       type: object
       additionalProperties: false
@@ -552,6 +576,7 @@ components:
           minimum: 0
       required:
         - count
+
     LogActionType:
       type: string
       enum:
@@ -564,6 +589,7 @@ components:
         - PLANT_UPDATED
         - PLANT_REMOVED
         - PARAM_CHANGED
+
     LogEntry:
       type: object
       additionalProperties: false
@@ -571,7 +597,7 @@ components:
         id:
           $ref: "#/components/schemas/Id"
         userId:
-          $ref: "#/components/schemas/Id"
+          $ref: "#/components/schemas/UserId"
         aquariumId:
           $ref: "#/components/schemas/Id"
         aquariumName:
@@ -606,6 +632,7 @@ components:
         - message
         - createdAt
         - metadata
+
     AquariumAndLogResponse:
       type: object
       additionalProperties: false
@@ -617,42 +644,20 @@ components:
       required:
         - aquarium
         - logEntry
-    Settings:
-      type: object
-      additionalProperties: false
-      properties:
-        language:
-          $ref: "#/components/schemas/Language"
-        theme:
-          $ref: "#/components/schemas/Theme"
-      required:
-        - language
-        - theme
-        - dataSource
-    SettingsUpdateRequest:
-      type: object
-      additionalProperties: false
-      properties:
-        language:
-          $ref: "#/components/schemas/Language"
-        theme:
-          $ref: "#/components/schemas/Theme"
-        sessionLengthMinutes:
-          type: integer
-          minimum: 1
-        dataSource:
-          type: string
+
     InvitationStatus:
       type: string
       enum:
         - PENDING
         - ACCEPTED
         - REJECTED
+
     ContactStatus:
       type: string
       enum:
         - PENDING
         - ACCEPTED
+
     Contact:
       type: object
       additionalProperties: false
@@ -660,9 +665,9 @@ components:
         id:
           $ref: "#/components/schemas/Id"
         userId:
-          $ref: "#/components/schemas/Id"
+          $ref: "#/components/schemas/UserId"
         friendId:
-          $ref: "#/components/schemas/Id"
+          $ref: "#/components/schemas/UserId"
         friendName:
           type: string
           example: Jan Kowalski
@@ -684,6 +689,7 @@ components:
         - friendEmail
         - status
         - createdAt
+
     Invitation:
       type: object
       additionalProperties: false
@@ -691,13 +697,13 @@ components:
         id:
           $ref: "#/components/schemas/Id"
         senderId:
-          $ref: "#/components/schemas/Id"
+          $ref: "#/components/schemas/UserId"
         recipientEmail:
           type: string
           format: email
           example: anna.nowak@example.com
         recipientUserId:
-          $ref: "#/components/schemas/NullableId"
+          $ref: "#/components/schemas/NullableUserId"
         status:
           $ref: "#/components/schemas/InvitationStatus"
         createdAt:
@@ -716,6 +722,7 @@ components:
         - status
         - createdAt
         - respondedAt
+
     ContactsOverview:
       type: object
       additionalProperties: false
@@ -731,6 +738,7 @@ components:
       required:
         - friends
         - invitations
+
     SendInvitationRequest:
       type: object
       additionalProperties: false
@@ -741,6 +749,7 @@ components:
           example: anna.nowak@example.com
       required:
         - email
+
     SendInvitationResponse:
       type: object
       additionalProperties: false
@@ -749,6 +758,7 @@ components:
           $ref: "#/components/schemas/Invitation"
       required:
         - invitation
+
     AcceptInvitationResponse:
       type: object
       additionalProperties: false
@@ -760,6 +770,7 @@ components:
       required:
         - invitation
         - contact
+
     StatsGlobal:
       type: object
       additionalProperties: false
@@ -801,6 +812,7 @@ components:
         - plantDistribution
         - mostCommonFish
         - mostCommonPlant
+
     StatsSingleAquarium:
       type: object
       additionalProperties: false
@@ -841,6 +853,7 @@ components:
         - plantDistribution
         - mostCommonFish
         - mostCommonPlant
+
     StatsDistributionItem:
       type: object
       additionalProperties: false
@@ -862,6 +875,7 @@ components:
         - name
         - count
         - percentage
+
     StatsMostCommon:
       type: object
       additionalProperties: false
@@ -883,12 +897,106 @@ components:
         - name
         - count
         - percentage
+
 paths:
-  /settings/{userId}:
+  /users:
     get:
-      summary: Fetch setting for user
+      summary: List users
       tags:
-        - Settings
+        - Users
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 50
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        "200":
+          description: Users list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      summary: Create user
+      tags:
+        - Users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserCreateRequest"
+            example:
+              email: user@example.com
+              username: aquarist123
+              password: StrongPassword123!
+              language: pl
+              theme: dark
+      responses:
+        "201":
+          description: Created user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+              example:
+                id: "00000000-0000-4000-8000-000000000000"
+                email: user@example.com
+                username: aquarist123
+                language: pl
+                theme: dark
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Conflict (email or username already exists)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: Conflict
+                message: Email already in use
+                field: email
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /users/{userId}:
+    get:
+      summary: Fetch user
+      tags:
+        - Users
       parameters:
         - name: userId
           in: path
@@ -897,12 +1005,15 @@ paths:
             $ref: "#/components/schemas/UserId"
       responses:
         "200":
-          description: Settings
+          description: User
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Settings"
+                $ref: "#/components/schemas/User"
               example:
+                id: "00000000-0000-4000-8000-000000000000"
+                email: user@example.com
+                username: aquarist123
                 language: pl
                 theme: dark
         "401":
@@ -912,9 +1023,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
     patch:
-      summary: Update settings for user
+      summary: Update user
       tags:
-        - Settings
+        - Users
       parameters:
         - name: userId
           in: path
@@ -926,17 +1037,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/SettingsUpdateRequest"
+              $ref: "#/components/schemas/UserUpdateRequest"
             example:
               language: en
               theme: light
       responses:
         "200":
-          description: Updated settings
+          description: Updated user
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Settings"
+                $ref: "#/components/schemas/User"
         "401":
           description: Unauthorized
           content:
@@ -945,6 +1056,32 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "422":
           description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      summary: Delete (reset) user
+      description: deletes the user info from the database. (the user remains in Cognito)
+      tags:
+        - Users
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UserId"
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
           content:
             application/json:
               schema:
@@ -963,137 +1100,74 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Fish"
-#    post:
-#      summary: Add fish
-#      description: Creates a fish entry (admin/internal).
-#      tags:
-#        - Fish
-#      requestBody:
-#        required: true
-#        content:
-#          application/json:
-#            schema:
-#              $ref: "#/components/schemas/FishCreateRequest"
-#      responses:
-#        "201":
-#          description: Created fish
-#          content:
-#            application/json:
-#              schema:
-#                $ref: "#/components/schemas/Fish"
-#        "401":
-#          description: Unauthorized
-#          content:
-#            application/json:
-#              schema:
-#                $ref: "#/components/schemas/ErrorResponse"
-#        "403":
-#          description: Forbidden
-#          content:
-#            application/json:
-#              schema:
-#                $ref: "#/components/schemas/ErrorResponse"
-#  /fish/{fishId}:
-#    get:
-#      summary: Get fish by id
-#      tags:
-#        - Fish
-#      parameters:
-#        - name: fishId
-#          in: path
-#          required: true
-#          schema:
-#            $ref: "#/components/schemas/Id"
-#          example: 2
-#      responses:
-#        "200":
-#          description: Fish
-#          content:
-#            application/json:
-#              schema:
-#                $ref: "#/components/schemas/Fish"
-#        "404":
-#          description: Not found
-#          content:
-#            application/json:
-#              schema:
-#                $ref: "#/components/schemas/ErrorResponse"
-#    patch:
-#      summary: Update fish (partial)
-#      tags:
-#        - Fish
-#      parameters:
-#        - name: fishId
-#          in: path
-#          required: true
-#          schema:
-#            $ref: "#/components/schemas/Id"
-#      requestBody:
-#        required: true
-#        content:
-#          application/json:
-#            schema:
-#              $ref: "#/components/schemas/FishUpdateRequest"
-#      responses:
-#        "200":
-#          description: Updated fish
-#          content:
-#            application/json:
-#              schema:
-#                $ref: "#/components/schemas/Fish"
-#        "401":
-#          description: Unauthorized
-#          content:
-#            application/json:
-#              schema:
-#                $ref: "#/components/schemas/ErrorResponse"
-#        "403":
-#          description: Forbidden
-#          content:
-#            application/json:
-#              schema:
-#                $ref: "#/components/schemas/ErrorResponse"
-#        "404":
-#          description: Not found
-#          content:
-#            application/json:
-#              schema:
-#                $ref: "#/components/schemas/ErrorResponse"
-#      security:
-#        - bearerAuth: []
-#    delete:
-#      summary: Delete fish
-#      tags:
-#        - Fish
-#      parameters:
-#        - name: fishId
-#          in: path
-#          required: true
-#          schema:
-#            $ref: "#/components/schemas/Id"
-#      responses:
-#        "204":
-#          description: No Content
-#        "401":
-#          description: Unauthorized
-#          content:
-#            application/json:
-#              schema:
-#                $ref: "#/components/schemas/ErrorResponse"
-#        "403":
-#          description: Forbidden
-#          content:
-#            application/json:
-#              schema:
-#                $ref: "#/components/schemas/ErrorResponse"
-#        "404":
-#          description: Not found
-#          content:
-#            application/json:
-#              schema:
-#                $ref: "#/components/schemas/ErrorResponse"
-#      security:
-#        - bearerAuth: []
+    post:
+      summary: Add fish
+      description: Creates a fish entry (admin/internal).
+      tags:
+        - Fish
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FishCreateRequest"
+      responses:
+        "201":
+          description: Created fish
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Fish"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /fish/{fishId}:
+    delete:
+      summary: Delete fish
+      tags:
+        - Fish
+      parameters:
+        - name: fishId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Id"
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /plants:
     get:
       summary: List plants
@@ -1108,144 +1182,85 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Plant"
-#    post:
-#      summary: Add plant
-#      description: Creates a plant entry (admin/internal).
-#      tags:
-#        - Plants
-#      requestBody:
-#        required: true
-#        content:
-#          application/json:
-#            schema:
-#              $ref: "#/components/schemas/PlantCreateRequest"
-#      responses:
-#        "201":
-#          description: Created plant
-#          content:
-#            application/json:
-#              schema:
-#                $ref: "#/components/schemas/Plant"
-#        "401":
-#          description: Unauthorized
-#          content:
-#            application/json:
-#              schema:
-#                $ref: "#/components/schemas/ErrorResponse"
-#        "403":
-#          description: Forbidden
-#          content:
-#            application/json:
-#              schema:
-#                $ref: "#/components/schemas/ErrorResponse"
-#      security:
-#        - bearerAuth: []
-#  /plants/{plantId}:
-#    get:
-#      summary: Get plant by id
-#      tags:
-#        - Plants
-#      parameters:
-#        - name: plantId
-#          in: path
-#          required: true
-#          schema:
-#            $ref: "#/components/schemas/Id"
-#          example: 2
-#      responses:
-#        "200":
-#          description: Plant
-#          content:
-#            application/json:
-#              schema:
-#                $ref: "#/components/schemas/Plant"
-#        "404":
-#          description: Not found
-#          content:
-#            application/json:
-#              schema:
-#                $ref: "#/components/schemas/ErrorResponse"
-#    patch:
-#      summary: Update plant (partial)
-#      tags:
-#        - Plants
-#      parameters:
-#        - name: plantId
-#          in: path
-#          required: true
-#          schema:
-#            $ref: "#/components/schemas/Id"
-#      requestBody:
-#        required: true
-#        content:
-#          application/json:
-#            schema:
-#              $ref: "#/components/schemas/PlantUpdateRequest"
-#      responses:
-#        "200":
-#          description: Updated plant
-#          content:
-#            application/json:
-#              schema:
-#                $ref: "#/components/schemas/Plant"
-#        "401":
-#          description: Unauthorized
-#          content:
-#            application/json:
-#              schema:
-#                $ref: "#/components/schemas/ErrorResponse"
-#        "403":
-#          description: Forbidden
-#          content:
-#            application/json:
-#              schema:
-#                $ref: "#/components/schemas/ErrorResponse"
-#        "404":
-#          description: Not found
-#          content:
-#            application/json:
-#              schema:
-#                $ref: "#/components/schemas/ErrorResponse"
-#      security:
-#        - bearerAuth: []
-#    delete:
-#      summary: Delete plant
-#      tags:
-#        - Plants
-#      parameters:
-#        - name: plantId
-#          in: path
-#          required: true
-#          schema:
-#            $ref: "#/components/schemas/Id"
-#      responses:
-#        "204":
-#          description: No Content
-#        "401":
-#          description: Unauthorized
-#          content:
-#            application/json:
-#              schema:
-#                $ref: "#/components/schemas/ErrorResponse"
-#        "403":
-#          description: Forbidden
-#          content:
-#            application/json:
-#              schema:
-#                $ref: "#/components/schemas/ErrorResponse"
-#        "404":
-#          description: Not found
-#          content:
-#            application/json:
-#              schema:
-#                $ref: "#/components/schemas/ErrorResponse"
-#      security:
-#        - bearerAuth: []
+    post:
+      summary: Add plant
+      description: Creates a plant entry (admin/internal).
+      tags:
+        - Plants
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlantCreateRequest"
+      responses:
+        "201":
+          description: Created plant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Plant"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /plants/{plantId}:
+    delete:
+      summary: Delete plant
+      tags:
+        - Plants
+      parameters:
+        - name: plantId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Id"
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /aquariums/{userId}:
     get:
       summary: List my aquariums
       tags:
         - Aquariums
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UserId"
       responses:
         "200":
           description: Aquariums list
@@ -1296,6 +1311,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+
   /aquariums/{aquariumId}:
     get:
       summary: Get aquarium by id
@@ -1393,6 +1409,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+
   /aquariums/{aquariumId}/fish:
     post:
       summary: Add fish to aquarium
@@ -1438,6 +1455,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+
   /aquariums/{aquariumId}/fish/{fishId}:
     delete:
       summary: Remove fish from aquarium
@@ -1480,6 +1498,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+
   /aquariums/{aquariumId}/plants:
     post:
       summary: Add plant to aquarium
@@ -1519,6 +1538,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+
   /aquariums/{aquariumId}/plants/{plantId}:
     delete:
       summary: Remove plant from aquarium
@@ -1560,6 +1580,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+
   /aquariums/{aquariumId}/status:
     post:
       summary: Recalculate aquarium status
@@ -1596,6 +1617,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+
   /aquariums/{aquariumId}/stats:
     get:
       summary: Stats for a single aquarium
@@ -1626,6 +1648,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+
   /logs/{userId}:
     get:
       summary: List logs for current user
@@ -1713,6 +1736,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+
   /contacts/{userId}:
     get:
       summary: List contacts for current user
@@ -1724,7 +1748,7 @@ paths:
           required: true
           schema:
             $ref: "#/components/schemas/UserId"
-          example: 1
+          example: "00000000-0000-4000-8000-000000000000"
       responses:
         "204":
           description: No Content
@@ -1740,6 +1764,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+
   /contacts/{userId}/{contactId}:
     post:
       summary: Send invitation by email
@@ -1810,6 +1835,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+
   /contacts/{userId}/{contactId}/accept:
     post:
       summary: Accept invitation
@@ -1846,6 +1872,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+
   /contacts/{userId}/{contactId}/reject:
     post:
       summary: Reject invitation
