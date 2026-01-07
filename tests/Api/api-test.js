@@ -52,8 +52,8 @@ async function loginToCognito() {
     }
 }
 
-async function checkEndpoint(name, path) {
-    const url = `${BASE_URL}${path}`;
+async function checkEndpoint(name, path, isFullUrl = false) {
+    const url = isFullUrl ? path : `${BASE_URL}${path}`;
     const headers = {
         "Accept": "application/json",
         Authorization: `Bearer ${JWT}`
@@ -62,7 +62,7 @@ async function checkEndpoint(name, path) {
     try {
         const response = await fetch(url, { headers });
         if (response.status === 200) {
-            console.log(` ${name} – działa! (200 OK)`);
+            console.log(` ${name} – działa (200 OK)`);
         } else {
             console.log(` ${name} – błąd: ${response.status} ${response.statusText}`);
         }
