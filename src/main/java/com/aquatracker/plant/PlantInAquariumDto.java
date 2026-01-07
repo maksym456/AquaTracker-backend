@@ -1,21 +1,21 @@
 package com.aquatracker.plant;
 
 public class PlantInAquariumDto {
-    private String plantId;
+    private Long plantId;
     private Integer count;
 
     public PlantInAquariumDto() {}
 
-    public PlantInAquariumDto(String plantId, Integer count) {
+    public PlantInAquariumDto(Long plantId, Integer count) {
         this.plantId = plantId;
         this.count = count;
     }
 
-    public String getPlantId() {
+    public Long getPlantId() {
         return plantId;
     }
 
-    public void setPlantId(String plantId) {
+    public void setPlantId(Long plantId) {
         this.plantId = plantId;
     }
 

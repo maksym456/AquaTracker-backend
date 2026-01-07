@@ -1,66 +1,39 @@
 package com.aquatracker.fish;
 
-import com.aquatracker.common.IdMapper;
-
-import java.util.Arrays;
-import java.util.List;
-
 public class FishResponseDto {
-    private String id;
+    private Long id;
     private String name;
-    private String waterType; // "freshwater" lub "saltwater"
-    private List<Integer> tempRange; // [min, max]
+    private String waterType; // OpenAPI: enum [Słodkowodna, Słonawowodna, Słonowodna]
+    private String temperature; // String format: "22-26"
     private String biotope;
-    private List<Double> phRange; // [min, max]
-    private List<Integer> hardness; // [min, max]
+    private String ph; // String format: "6.5-7.5"
+    private String hardnessDGH; // String format: "1-12"
     private String temperament;
-    private Integer minSchoolSize;
-    private String lifespan;
+    private Integer minShoalSize;
+    private String lifeSpan;
     private String iconName;
 
     public FishResponseDto() {}
 
     public FishResponseDto(FishSpecies fish) {
-        this.id = IdMapper.toFishId(fish.getId());
+        this.id = fish.getId(); // Long ID bez prefiksu
         this.name = fish.getName();
-        
-        // Mapowanie waterType: "Słodkowodna" -> "freshwater", "Słonowodna" -> "saltwater"
-        if (fish.getWaterType() != null) {
-            if (fish.getWaterType().equals("Słonowodna") || fish.getWaterType().equals("Słonawowodna")) {
-                this.waterType = "saltwater";
-            } else {
-                this.waterType = "freshwater";
-            }
-        } else {
-            this.waterType = "freshwater";
-        }
-        
-        // Konwersja temperature z String "22-26" na List<Integer> [22, 26]
-        this.tempRange = parseRange(fish.getTempMinC(), fish.getTempMaxC());
-        
+        this.waterType = fish.getWaterType(); // Używamy oryginalnej wartości (Słodkowodna/Słonowodna/Słonawowodna)
+        this.temperature = fish.getTemperature(); // Zwraca "22-26"
         this.biotope = fish.getBiotype();
-        
-        // Konwersja ph z String "6.5-7.5" na List<Double> [6.5, 7.5]
-        this.phRange = Arrays.asList(fish.getPhMin(), fish.getPhMax());
-        
-        // Konwersja hardness z String "1-12" na List<Integer> [1, 12]
-        this.hardness = Arrays.asList(fish.getGhMin(), fish.getGhMax());
-        
+        this.ph = fish.getPh(); // Zwraca "6.5-7.5"
+        this.hardnessDGH = fish.getHardnessDGH(); // Zwraca "1-12"
         this.temperament = fish.getTemperament();
-        this.minSchoolSize = fish.getMinShoalSize();
-        this.lifespan = fish.getLifespan();
+        this.minShoalSize = fish.getMinShoalSize();
+        this.lifeSpan = fish.getLifeSpan();
         this.iconName = fish.getIconName();
     }
 
-    private List<Integer> parseRange(int min, int max) {
-        return Arrays.asList(min, max);
-    }
-
-    public String getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -80,12 +53,12 @@ public class FishResponseDto {
         this.waterType = waterType;
     }
 
-    public List<Integer> getTempRange() {
-        return tempRange;
+    public String getTemperature() {
+        return temperature;
     }
 
-    public void setTempRange(List<Integer> tempRange) {
-        this.tempRange = tempRange;
+    public void setTemperature(String temperature) {
+        this.temperature = temperature;
     }
 
     public String getBiotope() {
@@ -96,20 +69,20 @@ public class FishResponseDto {
         this.biotope = biotope;
     }
 
-    public List<Double> getPhRange() {
-        return phRange;
+    public String getPh() {
+        return ph;
     }
 
-    public void setPhRange(List<Double> phRange) {
-        this.phRange = phRange;
+    public void setPh(String ph) {
+        this.ph = ph;
     }
 
-    public List<Integer> getHardness() {
-        return hardness;
+    public String getHardnessDGH() {
+        return hardnessDGH;
     }
 
-    public void setHardness(List<Integer> hardness) {
-        this.hardness = hardness;
+    public void setHardnessDGH(String hardnessDGH) {
+        this.hardnessDGH = hardnessDGH;
     }
 
     public String getTemperament() {
@@ -120,20 +93,20 @@ public class FishResponseDto {
         this.temperament = temperament;
     }
 
-    public Integer getMinSchoolSize() {
-        return minSchoolSize;
+    public Integer getMinShoalSize() {
+        return minShoalSize;
     }
 
-    public void setMinSchoolSize(Integer minSchoolSize) {
-        this.minSchoolSize = minSchoolSize;
+    public void setMinShoalSize(Integer minShoalSize) {
+        this.minShoalSize = minShoalSize;
     }
 
-    public String getLifespan() {
-        return lifespan;
+    public String getLifeSpan() {
+        return lifeSpan;
     }
 
-    public void setLifespan(String lifespan) {
-        this.lifespan = lifespan;
+    public void setLifeSpan(String lifeSpan) {
+        this.lifeSpan = lifeSpan;
     }
 
     public String getIconName() {

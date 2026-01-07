@@ -1,33 +1,37 @@
 package com.aquatracker.plant;
 
-import com.aquatracker.common.IdMapper;
-
 public class PlantResponseDto {
-    private String id;
+    private Long id;
     private String name;
     private String temperature;
     private String biotope;
     private String ph;
     private String hardnessDGH;
+    private String lightRequirements;
+    private String co2Requirements;
+    private String difficulty;
     private String iconName;
 
     public PlantResponseDto() {}
 
     public PlantResponseDto(Plant plant) {
-        this.id = IdMapper.toPlantId(plant.getId());
+        this.id = plant.getId(); // Long ID bez prefiksu
         this.name = plant.getName();
         this.temperature = plant.getTemperature();
         this.biotope = plant.getBiotope();
         this.ph = plant.getPh();
         this.hardnessDGH = plant.getHardnessDGH();
+        this.lightRequirements = plant.getLightRequirements();
+        this.co2Requirements = plant.getCo2Requirements();
+        this.difficulty = plant.getDifficulty();
         this.iconName = plant.getIconName();
     }
 
-    public String getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -69,6 +73,30 @@ public class PlantResponseDto {
 
     public void setHardnessDGH(String hardnessDGH) {
         this.hardnessDGH = hardnessDGH;
+    }
+
+    public String getLightRequirements() {
+        return lightRequirements;
+    }
+
+    public void setLightRequirements(String lightRequirements) {
+        this.lightRequirements = lightRequirements;
+    }
+
+    public String getCo2Requirements() {
+        return co2Requirements;
+    }
+
+    public void setCo2Requirements(String co2Requirements) {
+        this.co2Requirements = co2Requirements;
+    }
+
+    public String getDifficulty() {
+        return difficulty;
+    }
+
+    public void setDifficulty(String difficulty) {
+        this.difficulty = difficulty;
     }
 
     public String getIconName() {
