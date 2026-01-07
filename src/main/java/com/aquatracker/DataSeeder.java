@@ -2,6 +2,8 @@ package com.aquatracker;
 
 import com.aquatracker.fish.FishSpecies;
 import com.aquatracker.fish.FishSpeciesRepository;
+import com.aquatracker.plant.Plant;
+import com.aquatracker.plant.PlantRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import java.util.List;
@@ -10,9 +12,11 @@ import java.util.List;
 public class DataSeeder implements CommandLineRunner {
 
     private final FishSpeciesRepository fishRepository;
+    private final PlantRepository plantRepository;
 
-    public DataSeeder(FishSpeciesRepository fishRepository) {
+    public DataSeeder(FishSpeciesRepository fishRepository, PlantRepository plantRepository) {
         this.fishRepository = fishRepository;
+        this.plantRepository = plantRepository;
     }
 
     @Override
@@ -94,7 +98,31 @@ public class DataSeeder implements CommandLineRunner {
             );
 
             fishRepository.saveAll(fishList);
-            System.out.println("--- BAZA DANYCH ZOSTAŁA ZASILONA DANYMI ---");
+            System.out.println("--- BAZA DANYCH RYB ZOSTAŁA ZASILONA DANYMI ---");
+        }
+
+        // Seeder roślin
+        if (plantRepository.count() == 0) {
+            List<Plant> plantList = List.of(
+                    new Plant("Nurzaniec", "Nurzaniec", "Afryka, Azja, Europa", 20, 28, 6.8, 9.5, 5, 15, "bez znaczenia", "CO2", "łatwa"),
+                    new Plant("Anubias", "Anubias", "Afryka Zachodnia", 22, 28, 6.0, 8.0, 2, 12, "słabe", "CO2", "średnia"),
+                    new Plant("Mech Jawajski", "Mech Jawajski", "Azja", 15, 27, 5.0, 8.0, 2, 30, "słabe", "brak", "łatwa"),
+                    new Plant("Ludwigia", "Ludwigia", "Ameryka Północna", 18, 28, 5.5, 8.0, 2, 15, "umiarkowane", "brak", "łatwa"),
+                    new Plant("Rogatek", "Rogatek", "Ameryka Południowa, Północna", 15, 30, 5.0, 8.0, 3, 15, "słabe", "brak", "łatwa"),
+                    new Plant("Kryptokoryna", "Kryptokoryna", "Azja", 22, 30, 6.5, 8.0, 2, 15, "umiarkowane", "Fe", "łatwa"),
+                    new Plant("Lotos tygrysi", "Lotos tygrysi", "Afryka, Azja", 22, 28, 5.5, 7.5, 2, 10, "umiarkowane", "brak", "łatwa"),
+                    new Plant("Żabienica", "Żabienica", "Ameryka Południowa", 22, 28, 6.0, 7.5, 2, 15, "umiarkowane", "CO2", "trudna"),
+                    new Plant("Limnofila", "Limnofila", "Azja", 22, 26, 6.0, 7.0, 3, 14, "mocne", "CO2, Fe", "średnia"),
+                    new Plant("Rotala", "Rotala", "Azja", 18, 28, 5.5, 7.5, 2, 15, "mocne", "Fe, P, NO3", "łatwa"),
+                    new Plant("Duży Heniek", "Duży Heniek", "Ameryka Północna", 20, 26, 5.5, 8.0, 4, 18, "mocne", "CO2", "średnia"),
+                    new Plant("Ponikło maleńkie", "Ponikło maleńkie", "Wszędzie", 19, 28, 5.5, 8.0, 2, 12, "bez znaczenia", "CO2", "łatwa"),
+                    new Plant("Gałęzatka Kulista", "Gałęzatka Kulista", "Azja, Europa", 19, 28, 6.0, 8.5, 2, 12, "bez znaczenia", "CO2", "łatwa"),
+                    new Plant("Heniek Mały", "Heniek Mały", "Ameryka Północna", 20, 28, 5.0, 8.0, 1, 15, "mocne", "CO2, Fe", "średnia"),
+                    new Plant("Monte Carlo", "Monte Carlo", "Ameryka Południowa", 21, 28, 6.0, 7.5, 4, 20, "mocne", "CO2", "średnia")
+            );
+
+            plantRepository.saveAll(plantList);
+            System.out.println("--- BAZA DANYCH ROŚLIN ZOSTAŁA ZASILONA DANYMI ---");
         }
     }
 }
