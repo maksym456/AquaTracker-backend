@@ -22,13 +22,15 @@ public class Plant {
     private String lightRequirements; // "bez znaczenia", "słabe", "umiarkowane", "mocne"
     private String co2Requirements; // "brak", "CO2", "Fe", "CO2, Fe", "Fe, P, NO3", etc.
     private String difficulty; // "łatwa", "średnia", "trudna"
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
     private String iconName;
 
     public Plant() {}
 
     public Plant(String name, String species, String biotope, int tempMinC, int tempMaxC,
                  double phMin, double phMax, int ghMin, int ghMax,
-                 String lightRequirements, String co2Requirements, String difficulty) {
+                 String lightRequirements, String co2Requirements, String difficulty, String description) {
         this.name = name;
         this.species = species != null ? species : name;
         this.biotope = biotope;
@@ -41,6 +43,7 @@ public class Plant {
         this.lightRequirements = lightRequirements;
         this.co2Requirements = co2Requirements;
         this.difficulty = difficulty;
+        this.description = description;
     }
 
     public Long getId() { return id; }
@@ -69,6 +72,8 @@ public class Plant {
     public void setCo2Requirements(String co2Requirements) { this.co2Requirements = co2Requirements; }
     public String getDifficulty() { return difficulty; }
     public void setDifficulty(String difficulty) { this.difficulty = difficulty; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
     public String getIconName() { return iconName != null ? iconName : ""; }
     public void setIconName(String iconName) { this.iconName = iconName; }
 

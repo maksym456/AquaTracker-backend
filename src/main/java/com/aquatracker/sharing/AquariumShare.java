@@ -24,8 +24,8 @@ public class AquariumShare {
     @Column(name = "permission_level", nullable = false)
     private String permissionLevel; // "read", "write", "admin"
 
-    @Column(name = "shared_by")
-    private Long sharedBy; // User ID who shared the aquarium
+    @Column(name = "shared_by", columnDefinition = "VARCHAR(36)")
+    private String sharedBy; // User ID (UUID) who shared the aquarium
 
     @Column(name = "shared_at", nullable = false)
     private LocalDateTime sharedAt;
@@ -33,7 +33,7 @@ public class AquariumShare {
     // Constructors
     public AquariumShare() {}
 
-    public AquariumShare(Aquarium aquarium, User user, String permissionLevel, Long sharedBy) {
+    public AquariumShare(Aquarium aquarium, User user, String permissionLevel, String sharedBy) {
         this.aquarium = aquarium;
         this.user = user;
         this.permissionLevel = permissionLevel;
@@ -74,11 +74,11 @@ public class AquariumShare {
         this.permissionLevel = permissionLevel;
     }
 
-    public Long getSharedBy() {
+    public String getSharedBy() {
         return sharedBy;
     }
 
-    public void setSharedBy(Long sharedBy) {
+    public void setSharedBy(String sharedBy) {
         this.sharedBy = sharedBy;
     }
 

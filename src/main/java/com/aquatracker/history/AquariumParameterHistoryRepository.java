@@ -8,7 +8,7 @@ import java.util.List;
 @Repository
 public interface AquariumParameterHistoryRepository extends JpaRepository<AquariumParameterHistory, Long> {
     List<AquariumParameterHistory> findByAquarium_IdOrderByChangedAtDesc(Long aquariumId);
-    List<AquariumParameterHistory> findByUser_IdOrderByChangedAtDesc(Long userId);
+    List<AquariumParameterHistory> findByUser_IdOrderByChangedAtDesc(String userId);
     List<AquariumParameterHistory> findByAquarium_IdAndParameterNameOrderByChangedAtDesc(Long aquariumId, String parameterName);
 }
 

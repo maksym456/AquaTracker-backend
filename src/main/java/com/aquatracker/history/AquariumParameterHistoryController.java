@@ -51,10 +51,10 @@ public class AquariumParameterHistoryController {
     @GetMapping("/user/{userId}")
     public ResponseEntity<?> getHistoryByUser(@PathVariable String userId) {
         try {
-            Long uId = IdMapper.fromUserId(userId);
+            String uId = IdMapper.fromUserId(userId);
             if (uId == null) {
                 return ResponseEntity.badRequest()
-                        .body(Map.of("error", "Invalid user ID"));
+                        .body(Map.of("error", "Invalid user ID (expected UUID)"));
             }
 
             List<AquariumParameterHistory> history = historyRepository.findByUser_IdOrderByChangedAtDesc(uId);

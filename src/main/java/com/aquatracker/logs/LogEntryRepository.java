@@ -7,8 +7,8 @@ import java.util.List;
 
 @Repository
 public interface LogEntryRepository extends JpaRepository<LogEntry, Long> {
-    List<LogEntry> findByUser_IdOrderByCreatedAtDesc(Long userId);
+    List<LogEntry> findByUser_IdOrderByCreatedAtDesc(String userId);
     List<LogEntry> findByAquarium_IdOrderByCreatedAtDesc(Long aquariumId);
-    List<LogEntry> findByUser_IdAndActionTypeOrderByCreatedAtDesc(Long userId, String actionType);
+    List<LogEntry> findByUser_IdAndActionTypeOrderByCreatedAtDesc(String userId, String actionType);
 }
 

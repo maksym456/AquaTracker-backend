@@ -8,8 +8,8 @@ import java.util.Optional;
 
 @Repository
 public interface ContactRepository extends JpaRepository<Contact, Long> {
-    List<Contact> findByUserId(Long userId);
-    Optional<Contact> findByUserIdAndFriendId(Long userId, Long friendId);
-    boolean existsByUserIdAndFriendId(Long userId, Long friendId);
+    List<Contact> findByUser_Id(String userId);
+    Optional<Contact> findByUser_IdAndFriend_Id(String userId, String friendId);
+    boolean existsByUser_IdAndFriend_Id(String userId, String friendId);
 }
 

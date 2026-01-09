@@ -22,6 +22,7 @@ public class FishSpecies {
     private String temperament;
     private int minSchoolSize;
     private String lifespan;
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
     private String image;
     private String iconName;

@@ -9,8 +9,8 @@ import java.util.Optional;
 @Repository
 public interface AquariumShareRepository extends JpaRepository<AquariumShare, Long> {
     List<AquariumShare> findByAquarium_Id(Long aquariumId);
-    List<AquariumShare> findByUser_Id(Long userId);
-    Optional<AquariumShare> findByAquarium_IdAndUser_Id(Long aquariumId, Long userId);
-    void deleteByAquarium_IdAndUser_Id(Long aquariumId, Long userId);
+    List<AquariumShare> findByUser_Id(String userId);
+    Optional<AquariumShare> findByAquarium_IdAndUser_Id(Long aquariumId, String userId);
+    void deleteByAquarium_IdAndUser_Id(Long aquariumId, String userId);
 }
 

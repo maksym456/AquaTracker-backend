@@ -3,6 +3,9 @@ package com.aquatracker.user;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import org.hibernate.annotations.GenericGenerator;
+
+import java.util.UUID;
 
 @Entity
 @Table(name = "users", uniqueConstraints = {
@@ -11,8 +14,10 @@ import jakarta.validation.constraints.NotBlank;
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(generator = "UUID")
+    @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
+    @Column(name = "id", updatable = false, nullable = false, columnDefinition = "VARCHAR(36)")
+    private String id;
 
     @Column(name = "username")
     @NotBlank(message = "Nazwa użytkownika jest wymagana")
@@ -56,11 +61,11 @@ public class User {
     @Column(name = "cognito_sub", unique = true, nullable = true)
     private String cognitoSub;
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 

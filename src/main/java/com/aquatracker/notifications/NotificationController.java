@@ -38,10 +38,10 @@ public class NotificationController {
             @PathVariable String userId,
             @RequestParam(required = false) Boolean read) {
         try {
-            Long uId = IdMapper.fromUserId(userId);
+            String uId = IdMapper.fromUserId(userId);
             if (uId == null) {
                 return ResponseEntity.badRequest()
-                        .body(Map.of("error", "Invalid user ID"));
+                        .body(Map.of("error", "Invalid user ID (expected UUID)"));
             }
 
             List<Notification> notifications;
@@ -65,10 +65,10 @@ public class NotificationController {
     @GetMapping("/user/{userId}/count")
     public ResponseEntity<?> getUnreadCount(@PathVariable String userId) {
         try {
-            Long uId = IdMapper.fromUserId(userId);
+            String uId = IdMapper.fromUserId(userId);
             if (uId == null) {
                 return ResponseEntity.badRequest()
-                        .body(Map.of("error", "Invalid user ID"));
+                        .body(Map.of("error", "Invalid user ID (expected UUID)"));
             }
 
             Long count = notificationRepository.countByUser_IdAndIsRead(uId, false);
@@ -94,10 +94,10 @@ public class NotificationController {
                         .body(Map.of("error", "Missing required fields"));
             }
 
-            Long uId = IdMapper.fromUserId(userId);
+            String uId = IdMapper.fromUserId(userId);
             if (uId == null) {
                 return ResponseEntity.badRequest()
-                        .body(Map.of("error", "Invalid user ID"));
+                        .body(Map.of("error", "Invalid user ID (expected UUID)"));
             }
 
             Optional<User> userOpt = userRepository.findById(uId);
@@ -155,10 +155,10 @@ public class NotificationController {
     @PutMapping("/user/{userId}/read-all")
     public ResponseEntity<?> markAllAsRead(@PathVariable String userId) {
         try {
-            Long uId = IdMapper.fromUserId(userId);
+            String uId = IdMapper.fromUserId(userId);
             if (uId == null) {
                 return ResponseEntity.badRequest()
-                        .body(Map.of("error", "Invalid user ID"));
+                        .body(Map.of("error", "Invalid user ID (expected UUID)"));
             }
 
             List<Notification> unread = notificationRepository.findByUser_IdAndIsReadOrderByCreatedAtDesc(uId, false);

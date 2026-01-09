@@ -141,18 +141,13 @@ public class AquariumController {
     @GetMapping("/user/{userId}")
     public ResponseEntity<?> getAquariumsByUserId(@PathVariable String userId) {
         try {
-            Long userIdLong = IdMapper.fromUserId(userId);
-            if (userIdLong == null) {
-                // Jeśli userId nie jest w formacie u_123, traktuj jako bezpośredni ID (dla kompatybilności z mock)
-                try {
-                    userIdLong = Long.parseLong(userId);
-                } catch (NumberFormatException e) {
-                    return ResponseEntity.badRequest()
-                            .body(Map.of("error", "Invalid user ID format"));
-                }
+            String userIdString = IdMapper.fromUserId(userId);
+            if (userIdString == null) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Invalid user ID format (expected UUID)"));
             }
 
-            List<Aquarium> aquariums = aquariumRepository.findByOwnerId(userIdLong);
+            List<Aquarium> aquariums = aquariumRepository.findByOwner_Id(userIdString);
             List<AquariumResponseDto> aquariumDtos = aquariums.stream()
                     .map(aquarium -> new AquariumResponseDto(aquarium, validationService))
                     .collect(Collectors.toList());

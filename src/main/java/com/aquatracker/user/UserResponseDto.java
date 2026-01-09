@@ -1,6 +1,6 @@
 package com.aquatracker.user;
 
-import java.util.UUID;
+import com.aquatracker.common.IdMapper;
 
 public class UserResponseDto {
     private String id; // UUID
@@ -12,14 +12,8 @@ public class UserResponseDto {
     public UserResponseDto() {}
 
     public UserResponseDto(User user) {
-        // Używamy cognitoSub jako UUID, jeśli nie ma - generujemy UUID z Long ID (tymczasowe rozwiązanie)
-        if (user.getCognitoSub() != null && !user.getCognitoSub().isEmpty()) {
-            this.id = user.getCognitoSub();
-        } else {
-            // Tymczasowe: generujemy UUID z Long ID (nie jest to prawdziwy UUID, ale działa)
-            // W produkcji powinno się używać cognitoSub
-            this.id = UUID.nameUUIDFromBytes(user.getId().toString().getBytes()).toString();
-        }
+        // User.id jest teraz UUID (String), używamy IdMapper dla spójności z API
+        this.id = IdMapper.toUserId(user.getId());
         this.username = user.getUsername();
         this.email = user.getEmail();
         this.language = user.getSettingsLanguage() != null ? user.getSettingsLanguage() : "pl";

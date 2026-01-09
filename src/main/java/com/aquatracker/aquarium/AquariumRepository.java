@@ -7,6 +7,6 @@ import java.util.List;
 
 @Repository
 public interface AquariumRepository extends JpaRepository<Aquarium, Long> {
-    List<Aquarium> findByOwnerId(Long ownerId);
+    List<Aquarium> findByOwner_Id(String ownerId);
 }
 

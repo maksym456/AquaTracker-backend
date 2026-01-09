@@ -156,17 +156,13 @@ public class UserController {
     @GetMapping("/{userId}")
     public ResponseEntity<?> getUserById(@PathVariable String userId) {
         try {
-            Long userIdLong = com.aquatracker.common.IdMapper.fromUserId(userId);
-            if (userIdLong == null) {
-                try {
-                    userIdLong = Long.parseLong(userId);
-                } catch (NumberFormatException e) {
-                    return ResponseEntity.badRequest()
-                            .body(Map.of("error", "Invalid user ID format"));
-                }
+            String userIdString = com.aquatracker.common.IdMapper.fromUserId(userId);
+            if (userIdString == null) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Invalid user ID format (expected UUID)"));
             }
 
-            return userRepository.findById(userIdLong)
+            return userRepository.findById(userIdString)
                     .map(user -> ResponseEntity.ok(new UserResponseDto(user)))
                     .orElse(ResponseEntity.notFound().build());
         } catch (Exception e) {
@@ -216,17 +212,13 @@ public class UserController {
     @Transactional
     public ResponseEntity<?> updateUser(@PathVariable String userId, @RequestBody UpdateUserRequest request) {
         try {
-            Long userIdLong = com.aquatracker.common.IdMapper.fromUserId(userId);
-            if (userIdLong == null) {
-                try {
-                    userIdLong = Long.parseLong(userId);
-                } catch (NumberFormatException e) {
-                    return ResponseEntity.badRequest()
-                            .body(Map.of("error", "Invalid user ID format"));
-                }
+            String userIdString = com.aquatracker.common.IdMapper.fromUserId(userId);
+            if (userIdString == null) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Invalid user ID format (expected UUID)"));
             }
 
-            return userRepository.findById(userIdLong)
+            return userRepository.findById(userIdString)
                     .map(user -> {
                         if (request.getUsername() != null && !request.getUsername().trim().isEmpty()) {
                             user.setUsername(request.getUsername().trim());

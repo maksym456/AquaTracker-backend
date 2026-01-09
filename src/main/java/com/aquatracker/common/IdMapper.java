@@ -37,8 +37,12 @@ public class IdMapper {
         return toApiId("aq", id);
     }
 
-    public static String toUserId(Long id) {
-        return toApiId("u", id);
+    public static String toUserId(String id) {
+        if (id == null) {
+            return null;
+        }
+        // UUID jest już unikalny, zwracamy bezpośrednio bez prefiksu
+        return id;
     }
 
     public static String toLogId(Long id) {
@@ -65,8 +69,40 @@ public class IdMapper {
         return fromApiId(aquariumId);
     }
 
-    public static Long fromUserId(String userId) {
-        return fromApiId(userId);
+    public static String fromUserId(String userId) {
+        if (userId == null || userId.isEmpty()) {
+            return null;
+        }
+        // Obsługa zarówno formatu z prefiksem "u_" (dla kompatybilności) jak i bez
+        if (userId.startsWith("u_")) {
+            // Usuń prefiks "u_" i zwróć resztę jako UUID
+            String uuidPart = userId.substring(2);
+            // Sprawdź czy to poprawny UUID
+            if (isValidUUID(uuidPart)) {
+                return uuidPart;
+            }
+        }
+        // Jeśli to już UUID bez prefiksu, zwróć bezpośrednio
+        if (isValidUUID(userId)) {
+            return userId;
+        }
+        // Jeśli to nie UUID, zwróć null (błąd formatu)
+        return null;
+    }
+    
+    private static boolean isValidUUID(String str) {
+        if (str == null || str.isEmpty()) {
+            return false;
+        }
+        try {
+            // UUID ma format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (36 znaków)
+            // lub bez myślników: 32 znaki hex
+            String uuidPattern = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$";
+            String uuidPatternNoDashes = "^[0-9a-fA-F]{32}$";
+            return str.matches(uuidPattern) || str.matches(uuidPatternNoDashes);
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public static Long fromLogId(String logId) {

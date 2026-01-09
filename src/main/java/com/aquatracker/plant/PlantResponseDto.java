@@ -10,6 +10,7 @@ public class PlantResponseDto {
     private String lightRequirements;
     private String co2Requirements;
     private String difficulty;
+    private String description;
     private String iconName;
 
     public PlantResponseDto() {}
@@ -24,6 +25,7 @@ public class PlantResponseDto {
         this.lightRequirements = plant.getLightRequirements();
         this.co2Requirements = plant.getCo2Requirements();
         this.difficulty = plant.getDifficulty();
+        this.description = plant.getDescription();
         this.iconName = plant.getIconName();
     }
 
@@ -97,6 +99,14 @@ public class PlantResponseDto {
 
     public void setDifficulty(String difficulty) {
         this.difficulty = difficulty;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public String getIconName() {

@@ -84,6 +84,7 @@ public class PlantController {
             if (request.getLightRequirements() != null) plant.setLightRequirements(request.getLightRequirements());
             if (request.getCo2Requirements() != null) plant.setCo2Requirements(request.getCo2Requirements());
             if (request.getDifficulty() != null) plant.setDifficulty(request.getDifficulty());
+            if (request.getDescription() != null) plant.setDescription(request.getDescription());
             if (request.getIconName() != null) plant.setIconName(request.getIconName());
 
             plant = plantRepository.save(plant);
@@ -137,6 +138,9 @@ public class PlantController {
                         if (request.getDifficulty() != null) {
                             plant.setDifficulty(request.getDifficulty());
                         }
+                        if (request.getDescription() != null) {
+                            plant.setDescription(request.getDescription());
+                        }
                         if (request.getIconName() != null) {
                             plant.setIconName(request.getIconName());
                         }
@@ -179,6 +183,7 @@ public class PlantController {
         private String lightRequirements;
         private String co2Requirements;
         private String difficulty;
+        private String description;
         private String iconName;
 
         public String getName() {
@@ -275,6 +280,14 @@ public class PlantController {
 
         public void setDifficulty(String difficulty) {
             this.difficulty = difficulty;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public void setDescription(String description) {
+            this.description = description;
         }
 
         public String getIconName() {

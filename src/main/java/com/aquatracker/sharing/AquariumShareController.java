@@ -74,10 +74,10 @@ public class AquariumShareController {
                         .body(Map.of("error", "userId is required"));
             }
 
-            Long uId = IdMapper.fromUserId(userId);
+            String uId = IdMapper.fromUserId(userId);
             if (uId == null) {
                 return ResponseEntity.badRequest()
-                        .body(Map.of("error", "Invalid user ID"));
+                        .body(Map.of("error", "Invalid user ID (expected UUID)"));
             }
 
             Optional<Aquarium> aquariumOpt = aquariumRepository.findById(aqId);
@@ -100,7 +100,7 @@ public class AquariumShareController {
 
             Aquarium aquarium = aquariumOpt.get();
             User user = userOpt.get();
-            Long sharedBy = sharedById != null ? IdMapper.fromUserId(sharedById) : null;
+            String sharedBy = sharedById != null ? IdMapper.fromUserId(sharedById) : null;
 
             AquariumShare share = new AquariumShare(aquarium, user, permissionLevel, sharedBy);
             share = shareRepository.save(share);
@@ -169,7 +169,7 @@ public class AquariumShareController {
             @PathVariable String userId) {
         try {
             Long aqId = IdMapper.fromAquariumId(aquariumId);
-            Long uId = IdMapper.fromUserId(userId);
+            String uId = IdMapper.fromUserId(userId);
 
             if (aqId == null || uId == null) {
                 return ResponseEntity.badRequest()

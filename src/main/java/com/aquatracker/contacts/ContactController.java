@@ -42,18 +42,13 @@ public class ContactController {
     @GetMapping("/{userId}")
     public ResponseEntity<?> getContacts(@PathVariable String userId) {
         try {
-            Long userIdLong = IdMapper.fromUserId(userId);
-            if (userIdLong == null) {
-                // Jeśli userId nie jest w formacie u_123, traktuj jako bezpośredni ID (dla kompatybilności z mock)
-                try {
-                    userIdLong = Long.parseLong(userId);
-                } catch (NumberFormatException e) {
-                    return ResponseEntity.badRequest()
-                            .body(Map.of("error", "Invalid user ID format"));
-                }
+            String userIdString = IdMapper.fromUserId(userId);
+            if (userIdString == null) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Invalid user ID format (expected UUID)"));
             }
 
-            List<Contact> contacts = contactRepository.findByUserId(userIdLong);
+            List<Contact> contacts = contactRepository.findByUser_Id(userIdString);
             List<ContactResponseDto> contactDtos = contacts.stream()
                     .map(ContactResponseDto::new)
                     .collect(Collectors.toList());
@@ -82,14 +77,10 @@ public class ContactController {
                         .body(Map.of("error", "senderId and recipientEmail are required"));
             }
 
-            Long senderId = IdMapper.fromUserId(senderIdStr);
+            String senderId = IdMapper.fromUserId(senderIdStr);
             if (senderId == null) {
-                try {
-                    senderId = Long.parseLong(senderIdStr);
-                } catch (NumberFormatException e) {
-                    return ResponseEntity.badRequest()
-                            .body(Map.of("error", "Invalid senderId format"));
-                }
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Invalid senderId format (expected UUID)"));
             }
 
             User sender = userRepository.findById(senderId)
@@ -105,7 +96,7 @@ public class ContactController {
             Optional<User> recipientOpt = userRepository.findByEmail(recipientEmail.trim());
             if (recipientOpt.isPresent()) {
                 User recipient = recipientOpt.get();
-                if (contactRepository.existsByUserIdAndFriendId(senderId, recipient.getId())) {
+                if (contactRepository.existsByUser_IdAndFriend_Id(senderId, recipient.getId())) {
                     return ResponseEntity.status(HttpStatus.CONFLICT)
                             .body(Map.of("error", "Contact already exists"));
                 }
@@ -113,7 +104,7 @@ public class ContactController {
 
             // Sprawdź czy już istnieje zaproszenie pending
             Optional<Invitation> existingInvitation = invitationRepository
-                    .findBySenderIdAndRecipientEmail(senderId, recipientEmail.trim());
+                    .findBySender_IdAndRecipientEmail(senderId, recipientEmail.trim());
             if (existingInvitation.isPresent() && 
                 "pending".equals(existingInvitation.get().getStatus())) {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
@@ -182,7 +173,7 @@ public class ContactController {
 
             // Utwórz kontakt w obie strony (dwukierunkowy)
             // Kontakt od odbiorcy do nadawcy
-            if (!contactRepository.existsByUserIdAndFriendId(recipient.getId(), sender.getId())) {
+            if (!contactRepository.existsByUser_IdAndFriend_Id(recipient.getId(), sender.getId())) {
                 Contact contact1 = new Contact();
                 contact1.setUser(recipient);
                 contact1.setFriend(sender);
@@ -194,7 +185,7 @@ public class ContactController {
             }
 
             // Kontakt od nadawcy do odbiorcy
-            if (!contactRepository.existsByUserIdAndFriendId(sender.getId(), recipient.getId())) {
+            if (!contactRepository.existsByUser_IdAndFriend_Id(sender.getId(), recipient.getId())) {
                 Contact contact2 = new Contact();
                 contact2.setUser(sender);
                 contact2.setFriend(recipient);
@@ -299,19 +290,15 @@ public class ContactController {
     @GetMapping("/invitations/{userId}")
     public ResponseEntity<?> getInvitations(@PathVariable String userId) {
         try {
-            Long userIdLong = IdMapper.fromUserId(userId);
-            if (userIdLong == null) {
-                try {
-                    userIdLong = Long.parseLong(userId);
-                } catch (NumberFormatException e) {
-                    return ResponseEntity.badRequest()
-                            .body(Map.of("error", "Invalid user ID format"));
-                }
+            String userIdString = IdMapper.fromUserId(userId);
+            if (userIdString == null) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Invalid user ID format (expected UUID)"));
             }
 
             // Pobierz zaproszenia wysłane i otrzymane
-            List<Invitation> sentInvitations = invitationRepository.findBySenderId(userIdLong);
-            List<Invitation> receivedInvitations = invitationRepository.findByRecipientId(userIdLong);
+            List<Invitation> sentInvitations = invitationRepository.findBySender_Id(userIdString);
+            List<Invitation> receivedInvitations = invitationRepository.findByRecipient_Id(userIdString);
 
             List<InvitationResponseDto> allInvitations = sentInvitations.stream()
                     .map(InvitationResponseDto::new)
