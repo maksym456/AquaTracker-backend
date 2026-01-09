@@ -1,8 +1,5 @@
 package com.aquatracker.contacts;
 
-import com.aquatracker.Invitation;
-import com.aquatracker.InvitationRepository;
-import com.aquatracker.InvitationResponseDto;
 import com.aquatracker.common.IdMapper;
 import com.aquatracker.user.User;
 import com.aquatracker.user.UserRepository;
@@ -24,14 +21,11 @@ import java.util.stream.Collectors;
 public class ContactController {
 
     private final ContactRepository contactRepository;
-    private final InvitationRepository invitationRepository;
     private final UserRepository userRepository;
 
     public ContactController(ContactRepository contactRepository,
-                            InvitationRepository invitationRepository,
                             UserRepository userRepository) {
         this.contactRepository = contactRepository;
-        this.invitationRepository = invitationRepository;
         this.userRepository = userRepository;
     }
 
@@ -62,25 +56,27 @@ public class ContactController {
 
     /**
      * Wysyła zaproszenie do kontaktu
-     * POST /api/v1/contacts/invitations
-     * Body: { "senderId": "u_123", "recipientEmail": "email@example.com" }
+     * POST /api/v1/contacts/{userId}
+     * Body: { "email": "email@example.com" }
+     * Tworzy dwa rekordy Contact:
+     * - user=sender, friend=recipient, status="sent"
+     * - user=recipient, friend=sender, status="pending"
      */
-    @PostMapping("/invitations")
+    @PostMapping("/{userId}")
     @Transactional
-    public ResponseEntity<?> sendInvitation(@RequestBody Map<String, String> request) {
+    public ResponseEntity<?> sendInvitation(@PathVariable String userId, @RequestBody Map<String, String> request) {
         try {
-            String senderIdStr = request.get("senderId");
-            String recipientEmail = request.get("recipientEmail");
+            String recipientEmail = request.get("email");
 
-            if (senderIdStr == null || recipientEmail == null || recipientEmail.trim().isEmpty()) {
+            if (recipientEmail == null || recipientEmail.trim().isEmpty()) {
                 return ResponseEntity.badRequest()
-                        .body(Map.of("error", "senderId and recipientEmail are required"));
+                        .body(Map.of("error", "email is required"));
             }
 
-            String senderId = IdMapper.fromUserId(senderIdStr);
+            String senderId = IdMapper.fromUserId(userId);
             if (senderId == null) {
                 return ResponseEntity.badRequest()
-                        .body(Map.of("error", "Invalid senderId format (expected UUID)"));
+                        .body(Map.of("error", "Invalid user ID format (expected UUID)"));
             }
 
             User sender = userRepository.findById(senderId)
@@ -92,39 +88,60 @@ public class ContactController {
                         .body(Map.of("error", "Cannot send invitation to yourself"));
             }
 
-            // Sprawdź czy już istnieje kontakt
-            Optional<User> recipientOpt = userRepository.findByEmail(recipientEmail.trim());
-            if (recipientOpt.isPresent()) {
-                User recipient = recipientOpt.get();
-                if (contactRepository.existsByUser_IdAndFriend_Id(senderId, recipient.getId())) {
+            // Znajdź odbiorcę po emailu
+            User recipient = userRepository.findByEmail(recipientEmail.trim())
+                    .orElseThrow(() -> new RuntimeException("Recipient not found in system"));
+
+            // Sprawdź czy już istnieje kontakt (jako friend)
+            if (contactRepository.existsByUser_IdAndFriend_Id(senderId, recipient.getId())) {
+                Optional<Contact> existingContact = contactRepository.findByUser_IdAndFriend_Id(senderId, recipient.getId());
+                if (existingContact.isPresent() && "friend".equals(existingContact.get().getStatus())) {
                     return ResponseEntity.status(HttpStatus.CONFLICT)
-                            .body(Map.of("error", "Contact already exists"));
+                            .body(Map.of("error", "Contact already exists as friend"));
                 }
             }
 
-            // Sprawdź czy już istnieje zaproszenie pending
-            Optional<Invitation> existingInvitation = invitationRepository
-                    .findBySender_IdAndRecipientEmail(senderId, recipientEmail.trim());
-            if (existingInvitation.isPresent() && 
-                "pending".equals(existingInvitation.get().getStatus())) {
+            // Sprawdź czy już istnieje zaproszenie (sent/pending)
+            Optional<Contact> existingSent = contactRepository.findByUser_IdAndFriend_IdAndStatus(
+                    senderId, recipient.getId(), "sent");
+            Optional<Contact> existingPending = contactRepository.findByUser_IdAndFriend_IdAndStatus(
+                    recipient.getId(), senderId, "pending");
+            
+            if (existingSent.isPresent() || existingPending.isPresent()) {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
                         .body(Map.of("error", "Invitation already sent"));
             }
 
-            // Utwórz nowe zaproszenie
-            Invitation invitation = new Invitation();
-            invitation.setSender(sender);
-            invitation.setRecipientEmail(recipientEmail.trim());
-            invitation.setStatus("pending");
-            invitation.setCreatedAt(LocalDateTime.now());
+            // Utwórz pierwszy rekord Contact: sender -> recipient ze statusem "sent"
+            Contact contact1 = new Contact();
+            contact1.setUser(sender);
+            contact1.setFriend(recipient);
+            contact1.setFriendName(recipient.getUsername());
+            contact1.setFriendEmail(recipient.getEmail());
+            contact1.setStatus("sent");
+            contact1.setCreatedAt(LocalDateTime.now());
+            contactRepository.save(contact1);
 
-            // Jeśli odbiorca istnieje w bazie, ustaw go
-            recipientOpt.ifPresent(invitation::setRecipient);
-
-            invitation = invitationRepository.save(invitation);
+            // Utwórz drugi rekord Contact: recipient -> sender ze statusem "pending"
+            Contact contact2 = new Contact();
+            contact2.setUser(recipient);
+            contact2.setFriend(sender);
+            contact2.setFriendName(sender.getUsername());
+            contact2.setFriendEmail(sender.getEmail());
+            contact2.setStatus("pending");
+            contact2.setCreatedAt(LocalDateTime.now());
+            contactRepository.save(contact2);
 
             return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(new InvitationResponseDto(invitation));
+                    .body(Map.of("message", "Invitation sent successfully",
+                            "contact", new ContactResponseDto(contact1)));
+        } catch (RuntimeException e) {
+            if (e.getMessage().contains("not found")) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", e.getMessage()));
+            }
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to send invitation: " + e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Failed to send invitation: " + e.getMessage()));
@@ -133,134 +150,19 @@ public class ContactController {
 
     /**
      * Akceptuje zaproszenie
-     * POST /api/v1/contacts/invitations/{invitationId}/accept
+     * POST /api/v1/contacts/{userId}/accept/{contactId}
+     * Zmienia status obu rekordów Contact na "friend"
      */
-    @PostMapping("/invitations/{invitationId}/accept")
+    @PostMapping("/{userId}/accept/{contactId}")
     @Transactional
-    public ResponseEntity<?> acceptInvitation(@PathVariable String invitationId) {
+    public ResponseEntity<?> acceptInvitation(@PathVariable String userId, @PathVariable String contactId) {
         try {
-            Long invId = IdMapper.fromInvitationId(invitationId);
-            if (invId == null) {
-                try {
-                    invId = Long.parseLong(invitationId);
-                } catch (NumberFormatException e) {
-                    return ResponseEntity.badRequest()
-                            .body(Map.of("error", "Invalid invitation ID format"));
-                }
+            String userIdString = IdMapper.fromUserId(userId);
+            if (userIdString == null) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Invalid user ID format (expected UUID)"));
             }
 
-            Invitation invitation = invitationRepository.findById(invId)
-                    .orElseThrow(() -> new RuntimeException("Invitation not found"));
-
-            if (!"pending".equals(invitation.getStatus())) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(Map.of("error", "Invitation is not pending"));
-            }
-
-            User sender = invitation.getSender();
-            User recipient = invitation.getRecipient();
-
-            // Jeśli odbiorca nie istnieje w bazie, spróbuj znaleźć po email
-            if (recipient == null) {
-                recipient = userRepository.findByEmail(invitation.getRecipientEmail())
-                        .orElse(null);
-            }
-
-            if (recipient == null) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(Map.of("error", "Recipient not found in system"));
-            }
-
-            // Utwórz kontakt w obie strony (dwukierunkowy)
-            // Kontakt od odbiorcy do nadawcy
-            if (!contactRepository.existsByUser_IdAndFriend_Id(recipient.getId(), sender.getId())) {
-                Contact contact1 = new Contact();
-                contact1.setUser(recipient);
-                contact1.setFriend(sender);
-                contact1.setFriendName(sender.getUsername());
-                contact1.setFriendEmail(sender.getEmail());
-                contact1.setStatus("accepted");
-                contact1.setCreatedAt(LocalDateTime.now());
-                contactRepository.save(contact1);
-            }
-
-            // Kontakt od nadawcy do odbiorcy
-            if (!contactRepository.existsByUser_IdAndFriend_Id(sender.getId(), recipient.getId())) {
-                Contact contact2 = new Contact();
-                contact2.setUser(sender);
-                contact2.setFriend(recipient);
-                contact2.setFriendName(recipient.getUsername());
-                contact2.setFriendEmail(recipient.getEmail());
-                contact2.setStatus("accepted");
-                contact2.setCreatedAt(LocalDateTime.now());
-                contactRepository.save(contact2);
-            }
-
-            // Zaktualizuj zaproszenie
-            invitation.setStatus("accepted");
-            invitation.setRespondedAt(LocalDateTime.now());
-            invitation.setRecipient(recipient);
-            invitation = invitationRepository.save(invitation);
-
-            return ResponseEntity.ok(new InvitationResponseDto(invitation));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to accept invitation: " + e.getMessage()));
-        }
-    }
-
-    /**
-     * Odrzuca zaproszenie
-     * POST /api/v1/contacts/invitations/{invitationId}/reject
-     */
-    @PostMapping("/invitations/{invitationId}/reject")
-    @Transactional
-    public ResponseEntity<?> rejectInvitation(@PathVariable String invitationId) {
-        try {
-            Long invId = IdMapper.fromInvitationId(invitationId);
-            if (invId == null) {
-                try {
-                    invId = Long.parseLong(invitationId);
-                } catch (NumberFormatException e) {
-                    return ResponseEntity.badRequest()
-                            .body(Map.of("error", "Invalid invitation ID format"));
-                }
-            }
-
-            Invitation invitation = invitationRepository.findById(invId)
-                    .orElseThrow(() -> new RuntimeException("Invitation not found"));
-
-            if (!"pending".equals(invitation.getStatus())) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(Map.of("error", "Invitation is not pending"));
-            }
-
-            invitation.setStatus("rejected");
-            invitation.setRespondedAt(LocalDateTime.now());
-            
-            // Jeśli odbiorca istnieje w bazie, ustaw go
-            if (invitation.getRecipient() == null) {
-                userRepository.findByEmail(invitation.getRecipientEmail())
-                        .ifPresent(invitation::setRecipient);
-            }
-
-            invitation = invitationRepository.save(invitation);
-
-            return ResponseEntity.ok(new InvitationResponseDto(invitation));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to reject invitation: " + e.getMessage()));
-        }
-    }
-
-    /**
-     * Usuwa kontakt
-     * DELETE /api/v1/contacts/{contactId}
-     */
-    @DeleteMapping("/{contactId}")
-    @Transactional
-    public ResponseEntity<?> removeFriend(@PathVariable String contactId) {
-        try {
             Long contactIdLong = IdMapper.fromContactId(contactId);
             if (contactIdLong == null) {
                 try {
@@ -271,12 +173,176 @@ public class ContactController {
                 }
             }
 
-            if (contactRepository.existsById(contactIdLong)) {
-                contactRepository.deleteById(contactIdLong);
-                return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-            } else {
-                return ResponseEntity.notFound().build();
+            // Znajdź rekord Contact z statusem "pending"
+            Contact pendingContact = contactRepository.findById(contactIdLong)
+                    .orElseThrow(() -> new RuntimeException("Contact not found"));
+
+            // Sprawdź czy użytkownik jest właścicielem tego kontaktu
+            if (!pendingContact.getUser().getId().equals(userIdString)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "You can only accept invitations sent to you"));
             }
+
+            // Sprawdź czy status to "pending"
+            if (!"pending".equals(pendingContact.getStatus())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "Contact is not pending"));
+            }
+
+            User recipient = pendingContact.getUser();
+            User sender = pendingContact.getFriend();
+
+            // Znajdź drugi rekord Contact (sender -> recipient ze statusem "sent")
+            Contact sentContact = contactRepository.findByUser_IdAndFriend_Id(sender.getId(), recipient.getId())
+                    .orElseThrow(() -> new RuntimeException("Corresponding contact not found"));
+
+            if (!"sent".equals(sentContact.getStatus())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "Corresponding contact is not in sent status"));
+            }
+
+            // Zmień status obu rekordów na "friend"
+            pendingContact.setStatus("friend");
+            sentContact.setStatus("friend");
+            contactRepository.save(pendingContact);
+            contactRepository.save(sentContact);
+
+            return ResponseEntity.ok(Map.of("message", "Invitation accepted successfully",
+                    "contact", new ContactResponseDto(pendingContact)));
+        } catch (RuntimeException e) {
+            if (e.getMessage().contains("not found")) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", e.getMessage()));
+            }
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to accept invitation: " + e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to accept invitation: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Odrzuca/usuwuje zaproszenie
+     * DELETE /api/v1/contacts/{userId}/invitation/{contactId}
+     * Usuwa oba rekordy Contact (pending i sent)
+     */
+    @DeleteMapping("/{userId}/invitation/{contactId}")
+    @Transactional
+    public ResponseEntity<?> rejectInvitation(@PathVariable String userId, @PathVariable String contactId) {
+        try {
+            String userIdString = IdMapper.fromUserId(userId);
+            if (userIdString == null) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Invalid user ID format (expected UUID)"));
+            }
+
+            Long contactIdLong = IdMapper.fromContactId(contactId);
+            if (contactIdLong == null) {
+                try {
+                    contactIdLong = Long.parseLong(contactId);
+                } catch (NumberFormatException e) {
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("error", "Invalid contact ID format"));
+                }
+            }
+
+            // Znajdź rekord Contact
+            Contact contact = contactRepository.findById(contactIdLong)
+                    .orElseThrow(() -> new RuntimeException("Contact not found"));
+
+            // Sprawdź czy użytkownik jest właścicielem tego kontaktu lub jego przyjacielem
+            boolean isOwner = contact.getUser().getId().equals(userIdString);
+            boolean isFriend = contact.getFriend().getId().equals(userIdString);
+            
+            if (!isOwner && !isFriend) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "You can only delete your own invitations"));
+            }
+
+            // Sprawdź czy status to "pending" lub "sent"
+            if (!"pending".equals(contact.getStatus()) && !"sent".equals(contact.getStatus())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "Can only delete pending or sent invitations"));
+            }
+
+            User user1 = contact.getUser();
+            User user2 = contact.getFriend();
+
+            // Usuń oba rekordy Contact
+            contactRepository.deleteByUser_IdAndFriend_Id(user1.getId(), user2.getId());
+            contactRepository.deleteByUser_IdAndFriend_Id(user2.getId(), user1.getId());
+
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        } catch (RuntimeException e) {
+            if (e.getMessage().contains("not found")) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", e.getMessage()));
+            }
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to reject invitation: " + e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to reject invitation: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Usuwa kontakt (friend)
+     * DELETE /api/v1/contacts/{userId}/friend/{contactId}
+     * Usuwa oba rekordy Contact ze statusem "friend"
+     */
+    @DeleteMapping("/{userId}/friend/{contactId}")
+    @Transactional
+    public ResponseEntity<?> removeFriend(@PathVariable String userId, @PathVariable String contactId) {
+        try {
+            String userIdString = IdMapper.fromUserId(userId);
+            if (userIdString == null) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Invalid user ID format (expected UUID)"));
+            }
+
+            Long contactIdLong = IdMapper.fromContactId(contactId);
+            if (contactIdLong == null) {
+                try {
+                    contactIdLong = Long.parseLong(contactId);
+                } catch (NumberFormatException e) {
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("error", "Invalid contact ID format"));
+                }
+            }
+
+            // Znajdź rekord Contact
+            Contact contact = contactRepository.findById(contactIdLong)
+                    .orElseThrow(() -> new RuntimeException("Contact not found"));
+
+            // Sprawdź czy użytkownik jest właścicielem tego kontaktu
+            if (!contact.getUser().getId().equals(userIdString)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "You can only delete your own contacts"));
+            }
+
+            // Sprawdź czy status to "friend"
+            if (!"friend".equals(contact.getStatus())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "Can only delete friend contacts"));
+            }
+
+            User user1 = contact.getUser();
+            User user2 = contact.getFriend();
+
+            // Usuń oba rekordy Contact
+            contactRepository.deleteByUser_IdAndFriend_Id(user1.getId(), user2.getId());
+            contactRepository.deleteByUser_IdAndFriend_Id(user2.getId(), user1.getId());
+
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        } catch (RuntimeException e) {
+            if (e.getMessage().contains("not found")) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", e.getMessage()));
+            }
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to remove contact: " + e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Failed to remove contact: " + e.getMessage()));
@@ -284,10 +350,10 @@ public class ContactController {
     }
 
     /**
-     * Pobiera listę zaproszeń dla użytkownika
-     * GET /api/v1/contacts/invitations/{userId}
+     * Pobiera listę zaproszeń dla użytkownika (pending i sent)
+     * GET /api/v1/contacts/{userId}/invitations
      */
-    @GetMapping("/invitations/{userId}")
+    @GetMapping("/{userId}/invitations")
     public ResponseEntity<?> getInvitations(@PathVariable String userId) {
         try {
             String userIdString = IdMapper.fromUserId(userId);
@@ -296,16 +362,16 @@ public class ContactController {
                         .body(Map.of("error", "Invalid user ID format (expected UUID)"));
             }
 
-            // Pobierz zaproszenia wysłane i otrzymane
-            List<Invitation> sentInvitations = invitationRepository.findBySender_Id(userIdString);
-            List<Invitation> receivedInvitations = invitationRepository.findByRecipient_Id(userIdString);
+            // Pobierz zaproszenia oczekujące (pending) i wysłane (sent)
+            List<Contact> pendingInvitations = contactRepository.findByUser_IdAndStatus(userIdString, "pending");
+            List<Contact> sentInvitations = contactRepository.findByUser_IdAndStatus(userIdString, "sent");
 
-            List<InvitationResponseDto> allInvitations = sentInvitations.stream()
-                    .map(InvitationResponseDto::new)
+            List<ContactResponseDto> allInvitations = pendingInvitations.stream()
+                    .map(ContactResponseDto::new)
                     .collect(Collectors.toList());
             
-            allInvitations.addAll(receivedInvitations.stream()
-                    .map(InvitationResponseDto::new)
+            allInvitations.addAll(sentInvitations.stream()
+                    .map(ContactResponseDto::new)
                     .toList());
 
             return ResponseEntity.ok(allInvitations);
