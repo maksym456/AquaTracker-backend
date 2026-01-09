@@ -6,7 +6,9 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class AquariumValidationService {
@@ -115,41 +117,78 @@ public class AquariumValidationService {
             }
         }
 
-        // Sprawdzanie zgodności temperamentów między rybami
+        // Sprawdzanie zgodności temperamentów między rybami - grupowanie konfliktów
         if (aquarium.getFishInAquarium() != null && !aquarium.getFishInAquarium().isEmpty()) {
             List<AquariumFish> fishList = aquarium.getFishInAquarium().stream()
                     .filter(af -> af.getFishSpecies() != null && af.getFishSpecies().getTemperament() != null)
                     .toList();
 
+            // Zbierz wszystkie ryby agresywne i spokojne (dla konfliktu agresywne vs spokojne)
+            Set<String> aggressiveFish = new HashSet<>();
+            Set<String> peacefulFishForAggressive = new HashSet<>();
+            
+            // Zbierz wszystkie ryby pół-agresywne i spokojne (dla konfliktu pół-agresywne vs spokojne)
+            Set<String> semiAggressiveFish = new HashSet<>();
+            Set<String> peacefulFishForSemiAggressive = new HashSet<>();
+            
+            // Zbierz konflikty: agresywne vs spokojne i pół-agresywne vs spokojne
             for (int i = 0; i < fishList.size(); i++) {
                 AquariumFish fish1 = fishList.get(i);
                 FishSpecies species1 = fish1.getFishSpecies();
-                String temperament1 = species1.getTemperament();
-                Long speciesId1 = species1.getId();
+                String temperament1 = normalizeTemperament(species1.getTemperament());
+                String name1 = species1.getName();
 
                 for (int j = i + 1; j < fishList.size(); j++) {
                     AquariumFish fish2 = fishList.get(j);
                     FishSpecies species2 = fish2.getFishSpecies();
-                    String temperament2 = species2.getTemperament();
-                    Long speciesId2 = species2.getId();
+                    String temperament2 = normalizeTemperament(species2.getTemperament());
+                    String name2 = species2.getName();
 
-                    // Sprawdzenie zgodności temperamentów
-                    String compatibilityIssue = checkTemperamentCompatibility(
-                            temperament1, temperament2, speciesId1, speciesId2, species1.getName(), species2.getName());
-                    
-                    if (compatibilityIssue != null) {
-                        issues.add(new AquariumStatusDto.StatusIssueDto(
-                            "TEMPERAMENT_INCOMPATIBILITY",
-                            compatibilityIssue
-                        ));
-                        
-                        // Ustawienie poziomu na ERROR jeśli nieprawidłowe (najwyższy priorytet), WARNING jeśli ostrzeżenie
-                        if (compatibilityIssue.contains("nieprawidłowe") || compatibilityIssue.contains("Nieprawidłowe")) {
-                            level = "ERROR";
-                        } else if (!level.equals("ERROR")) {
-                            level = "WARNING";
+                    // Agresywne vs spokojne
+                    if ((temperament1.equals("agresywne") && temperament2.equals("spokojne")) ||
+                        (temperament1.equals("spokojne") && temperament2.equals("agresywne"))) {
+                        if (temperament1.equals("agresywne")) {
+                            aggressiveFish.add(name1);
+                            peacefulFishForAggressive.add(name2);
+                        } else {
+                            aggressiveFish.add(name2);
+                            peacefulFishForAggressive.add(name1);
                         }
                     }
+                    
+                    // Pół-agresywne vs spokojne
+                    if ((temperament1.equals("pół-agresywne") && temperament2.equals("spokojne")) ||
+                        (temperament1.equals("spokojne") && temperament2.equals("pół-agresywne"))) {
+                        if (temperament1.equals("pół-agresywne")) {
+                            semiAggressiveFish.add(name1);
+                            peacefulFishForSemiAggressive.add(name2);
+                        } else {
+                            semiAggressiveFish.add(name2);
+                            peacefulFishForSemiAggressive.add(name1);
+                        }
+                    }
+                }
+            }
+
+            // Utwórz zgrupowane komunikaty dla agresywnych vs spokojnych
+            if (!aggressiveFish.isEmpty() && !peacefulFishForAggressive.isEmpty()) {
+                String aggressiveList = String.join(", ", aggressiveFish);
+                String peacefulList = String.join(", ", peacefulFishForAggressive);
+                String message = String.format("Ostrzeżenie: %s (agresywne) nie mogą być z %s (spokojne). Konflikt może spowodować pożarcie łagodnego osobnika.",
+                    aggressiveList, peacefulList);
+                issues.add(new AquariumStatusDto.StatusIssueDto("TEMPERAMENT_INCOMPATIBILITY", message));
+                level = "WARNING";
+            }
+
+            // Utwórz zgrupowane komunikaty dla pół-agresywnych vs spokojnych
+            if (!semiAggressiveFish.isEmpty() && !peacefulFishForSemiAggressive.isEmpty()) {
+                String semiAggressiveList = String.join(", ", semiAggressiveFish);
+                String peacefulList = String.join(", ", peacefulFishForSemiAggressive);
+                String message = String.format("Ostrzeżenie: %s (pół-agresywne) nie mogą być z %s (spokojne). Konflikt może spowodować pożarcie łagodnego osobnika.",
+                    semiAggressiveList, peacefulList);
+                issues.add(new AquariumStatusDto.StatusIssueDto("TEMPERAMENT_INCOMPATIBILITY", message));
+                if (!level.equals("WARNING")) {
+                    level = "WARNING";
                 }
             }
         }
@@ -161,56 +200,6 @@ public class AquariumValidationService {
         return status;
     }
 
-    /**
-     * Sprawdza zgodność temperamentów między dwoma gatunkami ryb.
-     * Zwraca komunikat błędu/ostrzeżenia lub null jeśli wszystko OK.
-     */
-    private String checkTemperamentCompatibility(String temp1, String temp2, Long speciesId1, Long speciesId2,
-                                                   String name1, String name2) {
-        // Normalizacja nazw temperamentów (obsługa różnych wariantów)
-        String t1 = normalizeTemperament(temp1);
-        String t2 = normalizeTemperament(temp2);
-
-        // Wszystkie spokojne mogą ze sobą nawzajem być
-        if (t1.equals("spokojne") && t2.equals("spokojne")) {
-            return null; // OK
-        }
-
-        // Agresywne nie mogą być ani ze spokojnymi ani z półagresywnymi
-        if (t1.equals("agresywne") || t2.equals("agresywne")) {
-            if (t1.equals("spokojne") || t2.equals("spokojne")) {
-                return String.format("Nieprawidłowe: %s (agresywne) nie może być z %s (spokojne).", 
-                    t1.equals("agresywne") ? name1 : name2,
-                    t1.equals("spokojne") ? name1 : name2);
-            }
-            if (t1.equals("pół-agresywne") || t2.equals("pół-agresywne")) {
-                return String.format("Nieprawidłowe: %s (agresywne) nie może być z %s (pół-agresywne).", 
-                    t1.equals("agresywne") ? name1 : name2,
-                    t1.equals("pół-agresywne") ? name1 : name2);
-            }
-            // Agresywne z agresywnymi spoza swojego gatunku wymagają dodatkowego sprawdzenia
-            if (t1.equals("agresywne") && t2.equals("agresywne") && !speciesId1.equals(speciesId2)) {
-                return String.format("Ostrzeżenie: %s i %s (oba agresywne, różne gatunki) wymagają dodatkowego sprawdzenia.", 
-                    name1, name2);
-            }
-        }
-
-        // Półagresywne ze spokojnymi wymagają dodatkowego sprawdzenia
-        if ((t1.equals("pół-agresywne") && t2.equals("spokojne")) || 
-            (t1.equals("spokojne") && t2.equals("pół-agresywne"))) {
-            return String.format("Ostrzeżenie: %s (pół-agresywne) z %s (spokojne) wymaga dodatkowego sprawdzenia.", 
-                t1.equals("pół-agresywne") ? name1 : name2,
-                t1.equals("spokojne") ? name1 : name2);
-        }
-
-        // Półagresywne ze półagresywnymi spoza swojego gatunku wymagają dodatkowego sprawdzenia
-        if (t1.equals("pół-agresywne") && t2.equals("pół-agresywne") && !speciesId1.equals(speciesId2)) {
-            return String.format("Ostrzeżenie: %s i %s (oba pół-agresywne, różne gatunki) wymagają dodatkowego sprawdzenia.", 
-                name1, name2);
-        }
-
-        return null; // OK
-    }
 
     /**
      * Normalizuje nazwę temperamentu do standardowej formy.
