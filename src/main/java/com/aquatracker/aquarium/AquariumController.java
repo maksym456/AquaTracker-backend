@@ -126,10 +126,25 @@ public class AquariumController {
     }
 
     @GetMapping
-    public List<AquariumResponseDto> getAllAquariums() {
-        return aquariumRepository.findAll().stream()
-                .map(aquarium -> new AquariumResponseDto(aquarium, validationService))
-                .collect(Collectors.toList());
+    public ResponseEntity<?> getAllAquariums(@RequestParam(required = false) String userId) {
+        if (userId != null && !userId.trim().isEmpty()) {
+            try {
+                String userIdString = IdMapper.fromUserId(userId);
+                if (userIdString == null) {
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("error", "Invalid user ID format (expected UUID)"));
+                }
+                List<Aquarium> aquariums = aquariumRepository.findByOwner_Id(userIdString);
+                List<AquariumResponseDto> aquariumDtos = aquariums.stream()
+                        .map(aquarium -> new AquariumResponseDto(aquarium, validationService))
+                        .collect(Collectors.toList());
+                return ResponseEntity.ok(aquariumDtos);
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(Map.of("error", "Failed to fetch aquariums: " + e.getMessage()));
+            }
+        }
+        return ResponseEntity.ok(List.of());
     }
 
     /**
@@ -184,7 +199,6 @@ public class AquariumController {
 
             Aquarium aquarium = new Aquarium();
             aquarium.setName(request.getName().trim());
-            // Mapowanie waterType: frontend może wysłać "freshwater", baza potrzebuje "Słodkowodna"
             String waterType = request.getWaterType();
             if (waterType != null) {
                 if (waterType.equals("freshwater")) {
@@ -195,26 +209,32 @@ public class AquariumController {
             }
             aquarium.setWaterType(waterType != null ? waterType : "Słodkowodna");
             
-            // Mapowanie temperature (frontend może wysłać jako "temperature" lub "temperatureC")
             Double temp = request.getTemperature() != null ? request.getTemperature() : request.getTemperatureC();
             aquarium.setTemperatureC(temp != null ? temp : 24.0);
             
             aquarium.setBiotope(request.getBiotope() != null ? request.getBiotope() : "");
             aquarium.setPh(request.getPh());
             
-            // Mapowanie hardness (frontend może wysłać jako "hardness" lub "hardnessDGH")
             Integer hardness = request.getHardness() != null ? request.getHardness() : request.getHardnessDGH();
             aquarium.setHardnessDGH(hardness);
             
             aquarium.setDescription(request.getDescription() != null ? request.getDescription() : "");
             
-            // Mapowanie volume (frontend może wysłać jako "volume" lub "volumeLiters")
             Integer volume = request.getVolume() != null ? request.getVolume() : request.getVolumeLiters();
             aquarium.setVolumeLiters(volume != null ? volume : 200);
             aquarium.setCreatedAt(LocalDateTime.now());
-            // Ustawiamy domyślnego użytkownika, jeśli baza wymaga user_id
-            aquarium.setOwner(getOrCreateDefaultUser());
-            // Kolekcje są już zainicjalizowane w klasie Aquarium
+            
+            User owner = null;
+            if (request.getOwnerId() != null && !request.getOwnerId().trim().isEmpty()) {
+                String userIdString = IdMapper.fromUserId(request.getOwnerId());
+                if (userIdString != null) {
+                    owner = userRepository.findById(userIdString).orElse(null);
+                }
+            }
+            if (owner == null) {
+                owner = getOrCreateDefaultUser();
+            }
+            aquarium.setOwner(owner);
 
             aquarium = aquariumRepository.save(aquarium);
             
@@ -222,8 +242,7 @@ public class AquariumController {
             System.out.println("  Name: " + aquarium.getName());
             System.out.println("  Owner: " + (aquarium.getOwner() != null ? aquarium.getOwner().getEmail() : "null"));
 
-            // Create log entry for aquarium creation
-            User user = aquarium.getOwner() != null ? aquarium.getOwner() : getOrCreateDefaultUser();
+            User user = aquarium.getOwner();
             LogEntry logEntry = createLogEntry(user, aquarium, "AQUARIUM_CREATED", "Utworzono akwarium", 
                 String.format("Akwarium '%s' zostało utworzone.", aquarium.getName()), null);
 
@@ -695,15 +714,16 @@ public class AquariumController {
     public static class AquariumRequestDto {
         private String name;
         private String waterType;
-        private Double temperature; // frontend format
-        private Double temperatureC; // backend format (dla kompatybilności)
+        private Double temperature;
+        private Double temperatureC;
         private String biotope;
         private Double ph;
-        private Integer hardness; // frontend format
-        private Integer hardnessDGH; // backend format (dla kompatybilności)
+        private Integer hardness;
+        private Integer hardnessDGH;
         private String description;
-        private Integer volume; // frontend format
-        private Integer volumeLiters; // backend format (dla kompatybilności)
+        private Integer volume;
+        private Integer volumeLiters;
+        private String ownerId;
         private List<FishInAquariumDto> fish;
         private List<PlantInAquariumDto> plants;
 
@@ -729,6 +749,8 @@ public class AquariumController {
         public void setVolume(Integer volume) { this.volume = volume; }
         public Integer getVolumeLiters() { return volumeLiters; }
         public void setVolumeLiters(Integer volumeLiters) { this.volumeLiters = volumeLiters; }
+        public String getOwnerId() { return ownerId; }
+        public void setOwnerId(String ownerId) { this.ownerId = ownerId; }
         public List<FishInAquariumDto> getFish() { return fish; }
         public void setFish(List<FishInAquariumDto> fish) { this.fish = fish; }
         public List<PlantInAquariumDto> getPlants() { return plants; }
