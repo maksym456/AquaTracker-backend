@@ -8,6 +8,7 @@ import com.aquatracker.user.UserRepository;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -55,6 +56,7 @@ public class AquariumShareController {
     }
 
     @PostMapping
+    @Transactional
     public ResponseEntity<?> shareAquarium(
             @PathVariable String aquariumId,
             @RequestBody Map<String, String> request) {

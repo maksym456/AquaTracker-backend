@@ -26,9 +26,13 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
+import com.aquatracker.sharing.AquariumShareRepository;
 
 @Profile("!dev")
 @RestController
@@ -46,6 +50,7 @@ public class AquariumController {
     private final AquariumValidationService validationService;
     private final LogEntryRepository logEntryRepository;
     private final AquariumParameterHistoryRepository parameterHistoryRepository;
+    private final AquariumShareRepository aquariumShareRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -58,7 +63,8 @@ public class AquariumController {
                              AquariumPlantRepository aquariumPlantRepository,
                              AquariumValidationService validationService,
                              LogEntryRepository logEntryRepository,
-                             AquariumParameterHistoryRepository parameterHistoryRepository) {
+                             AquariumParameterHistoryRepository parameterHistoryRepository,
+                             AquariumShareRepository aquariumShareRepository) {
         this.aquariumRepository = aquariumRepository;
         this.fishRepository = fishRepository;
         this.plantRepository = plantRepository;
@@ -68,6 +74,7 @@ public class AquariumController {
         this.validationService = validationService;
         this.logEntryRepository = logEntryRepository;
         this.parameterHistoryRepository = parameterHistoryRepository;
+        this.aquariumShareRepository = aquariumShareRepository;
     }
     
     private User getOrCreateDefaultUser() {
@@ -134,8 +141,36 @@ public class AquariumController {
                     return ResponseEntity.badRequest()
                             .body(Map.of("error", "Invalid user ID format (expected UUID)"));
                 }
-                List<Aquarium> aquariums = aquariumRepository.findByOwner_Id(userIdString);
-                List<AquariumResponseDto> aquariumDtos = aquariums.stream()
+                
+                // Pobierz akwaria, których użytkownik jest właścicielem
+                List<Aquarium> ownedAquariums = aquariumRepository.findByOwner_Id(userIdString);
+                
+                // Pobierz akwaria współdzielone z użytkownikiem
+                List<Aquarium> sharedAquariums = aquariumShareRepository.findByUser_Id(userIdString)
+                        .stream()
+                        .map(share -> share.getAquarium())
+                        .filter(aquarium -> aquarium != null)
+                        .collect(Collectors.toList());
+                
+                // Połącz obie listy i usuń duplikaty
+                Set<Long> seenIds = new HashSet<>();
+                List<Aquarium> allAquariums = new ArrayList<>();
+                
+                for (Aquarium aq : ownedAquariums) {
+                    if (!seenIds.contains(aq.getId())) {
+                        allAquariums.add(aq);
+                        seenIds.add(aq.getId());
+                    }
+                }
+                
+                for (Aquarium aq : sharedAquariums) {
+                    if (!seenIds.contains(aq.getId())) {
+                        allAquariums.add(aq);
+                        seenIds.add(aq.getId());
+                    }
+                }
+                
+                List<AquariumResponseDto> aquariumDtos = allAquariums.stream()
                         .map(aquarium -> new AquariumResponseDto(aquarium, validationService))
                         .collect(Collectors.toList());
                 return ResponseEntity.ok(aquariumDtos);
@@ -162,8 +197,35 @@ public class AquariumController {
                         .body(Map.of("error", "Invalid user ID format (expected UUID)"));
             }
 
-            List<Aquarium> aquariums = aquariumRepository.findByOwner_Id(userIdString);
-            List<AquariumResponseDto> aquariumDtos = aquariums.stream()
+            // Pobierz akwaria, których użytkownik jest właścicielem
+            List<Aquarium> ownedAquariums = aquariumRepository.findByOwner_Id(userIdString);
+            
+            // Pobierz akwaria współdzielone z użytkownikiem
+            List<Aquarium> sharedAquariums = aquariumShareRepository.findByUser_Id(userIdString)
+                    .stream()
+                    .map(share -> share.getAquarium())
+                    .filter(aquarium -> aquarium != null)
+                    .collect(Collectors.toList());
+            
+            // Połącz obie listy i usuń duplikaty (na wypadek gdyby użytkownik był właścicielem i miał też share)
+            Set<Long> seenIds = new HashSet<>();
+            List<Aquarium> allAquariums = new ArrayList<>();
+            
+            for (Aquarium aq : ownedAquariums) {
+                if (!seenIds.contains(aq.getId())) {
+                    allAquariums.add(aq);
+                    seenIds.add(aq.getId());
+                }
+            }
+            
+            for (Aquarium aq : sharedAquariums) {
+                if (!seenIds.contains(aq.getId())) {
+                    allAquariums.add(aq);
+                    seenIds.add(aq.getId());
+                }
+            }
+            
+            List<AquariumResponseDto> aquariumDtos = allAquariums.stream()
                     .map(aquarium -> new AquariumResponseDto(aquarium, validationService))
                     .collect(Collectors.toList());
 
