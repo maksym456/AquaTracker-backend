@@ -4,6 +4,7 @@ import com.aquatracker.common.IdMapper;
 
 public class ContactResponseDto {
     private String id;
+    private String friendId; // UUID znajomego (używany do współdzielenia akwariów)
     private String name;
     private String email;
     private String status;
@@ -12,6 +13,9 @@ public class ContactResponseDto {
 
     public ContactResponseDto(Contact contact) {
         this.id = IdMapper.toContactId(contact.getId());
+        // UUID znajomego - potrzebny do współdzielenia akwariów
+        this.friendId = contact.getFriend() != null ? 
+                       IdMapper.toUserId(contact.getFriend().getId()) : null;
         this.name = contact.getFriendName() != null ? contact.getFriendName() : 
                    (contact.getFriend() != null ? contact.getFriend().getUsername() : "Unknown");
         this.email = contact.getFriendEmail() != null ? contact.getFriendEmail() : 
@@ -25,6 +29,14 @@ public class ContactResponseDto {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getFriendId() {
+        return friendId;
+    }
+
+    public void setFriendId(String friendId) {
+        this.friendId = friendId;
     }
 
     public String getName() {
