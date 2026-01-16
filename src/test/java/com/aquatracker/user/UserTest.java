@@ -25,12 +25,13 @@ class UserTest {
     @Test
     void shouldSetAndGetAllBasicFieldsCorrectly() {
         User user = new User();
-        user.setId(1L);
+        String userId = "00000000-0000-4000-8000-000000000001";
+        user.setId(userId);
         user.setUsername("janek123");
         user.setEmail("janek@example.com");
         user.setCreatedAt(LocalDateTime.of(2025, 12, 29, 12, 0));
 
-        assertThat(user.getId()).isEqualTo(1L);
+        assertThat(user.getId()).isEqualTo(userId);
         assertThat(user.getUsername()).isEqualTo("janek123");
         assertThat(user.getEmail()).isEqualTo("janek@example.com");
         assertThat(user.getCreatedAt()).isEqualTo(LocalDateTime.of(2025, 12, 29, 12, 0));

@@ -25,12 +25,13 @@ class UserControllerTest {
     @Test
     void shouldGetUserByIdWhenFound() {
         User user = new User();
-        user.setId(1L);
+        String userId = "00000000-0000-4000-8000-000000000001";
+        user.setId(userId);
         user.setUsername("testuser");
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
-        ResponseEntity<?> response = userController.getUserById("1");
+        ResponseEntity<?> response = userController.getUserById(userId);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isInstanceOf(UserResponseDto.class);
@@ -38,9 +39,10 @@ class UserControllerTest {
 
     @Test
     void shouldReturnNotFoundWhenUserNotFound() {
-        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+        String userId = "00000000-0000-4000-8000-000000000001";
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
-        ResponseEntity<?> response = userController.getUserById("1");
+        ResponseEntity<?> response = userController.getUserById(userId);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
