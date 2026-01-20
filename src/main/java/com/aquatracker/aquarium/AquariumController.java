@@ -412,6 +412,10 @@ public class AquariumController {
                     logEntryRepository.save(log);
                 }
                 
+                // Delete all aquarium shares before deleting aquarium
+                // This prevents foreign key constraint violation
+                aquariumShareRepository.deleteByAquarium_Id(aquariumId);
+                
                 // Create log entry for aquarium deletion
                 LogEntry logEntry = new LogEntry();
                 logEntry.setUser(user);

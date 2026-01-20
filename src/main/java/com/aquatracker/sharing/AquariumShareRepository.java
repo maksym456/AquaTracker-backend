@@ -12,5 +12,6 @@ public interface AquariumShareRepository extends JpaRepository<AquariumShare, Lo
     List<AquariumShare> findByUser_Id(String userId);
     Optional<AquariumShare> findByAquarium_IdAndUser_Id(Long aquariumId, String userId);
     void deleteByAquarium_IdAndUser_Id(Long aquariumId, String userId);
+    void deleteByAquarium_Id(Long aquariumId);
 }
 
