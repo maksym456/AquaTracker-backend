@@ -225,7 +225,7 @@ public class FishController {
             welonka.put("description", "Welonka to klasyczna, spokojna ryba akwariowa, idealna dla początkujących. Jest odporna i łatwa w utrzymaniu.");
             welonka.put("image", "/fish/Welonka__Złota_rybka.png");
             welonka.put("iconName", "Welonka__Złota_rybka.png");
-            fishData.put("Welonka (Złota rybka)", welonka);
+            fishData.put("Welonka", welonka);
             
             // Gupik (Głupik)
             Map<String, String> gupik = new HashMap<>();
@@ -253,7 +253,7 @@ public class FishController {
             skalar.put("description", "Skalar (Żaglowiec) to ryba pół-agresywna, która najlepiej czuje się w grupie. Lubi dużo miejsca do pływania i rośliny, przy których może się chować. Może pokazywać dominujące zachowania wobec innych ryb, dlatego najlepiej trzymać ją z gatunkami o podobnym temperamencie.");
             skalar.put("image", "/fish/Skalar__Żaglowiec.png");
             skalar.put("iconName", "Skalar__Żaglowiec.png");
-            fishData.put("Skalar (Żaglowiec)", skalar);
+            fishData.put("Skalar", skalar);
             
             // Mieczyk Hellera
             Map<String, String> mieczyk = new HashMap<>();
@@ -316,7 +316,7 @@ public class FishController {
             glonojad.put("description", "Glonojad / Zbrojnik to spokojna ryba, która pomaga utrzymać akwarium w czystości, zjadając glony z roślin i szybów. Lubi kryjówki i spokojne miejsca w zbiorniku. Jest odporna i łatwa w utrzymaniu, dobrze nadaje się do akwarium z innymi spokojnymi rybami.");
             glonojad.put("image", "/fish/GlonojadZbrojnik-.png");
             glonojad.put("iconName", "GlonojadZbrojnik-.png");
-            fishData.put("Glonojad (Zbrojnik)", glonojad);
+            fishData.put("Glonojad", glonojad);
             
             // Błazenek pomarańczowy
             Map<String, String> blazenek = new HashMap<>();
@@ -351,7 +351,7 @@ public class FishController {
             pyszczak.put("description", "Pyszczak (Malawi) to agresywna ryba, która najlepiej czuje się w swoim terytorium. Lubi mieć kryjówki i przestrzeń do pływania.");
             pyszczak.put("image", "/fish/Pyszczak__Malawi.png");
             pyszczak.put("iconName", "Pyszczak__Malawi.png");
-            fishData.put("Pyszczak (Malawi)", pyszczak);
+            fishData.put("Pyszczak", pyszczak);
             
             // Księżniczka z Burundi
             Map<String, String> ksiezniczka = new HashMap<>();
