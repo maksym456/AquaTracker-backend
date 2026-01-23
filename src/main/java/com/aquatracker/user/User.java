@@ -5,8 +5,6 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import org.hibernate.annotations.GenericGenerator;
 
-import java.util.UUID;
-
 @Entity
 @Table(name = "users", uniqueConstraints = {
     @UniqueConstraint(columnNames = "email")
@@ -60,6 +58,12 @@ public class User {
 
     @Column(name = "cognito_sub", unique = true, nullable = true)
     private String cognitoSub;
+
+    @Column(name = "active", nullable = false)
+    private Boolean active = true;
+
+    @Column(name = "is_admin", nullable = false)
+    private Boolean isAdmin = false;
 
     public String getId() {
         return id;
@@ -144,5 +148,21 @@ public class User {
 
     public void setCognitoSub(String cognitoSub) {
         this.cognitoSub = cognitoSub;
+    }
+
+    public Boolean getActive() {
+        return active != null ? active : true;
+    }
+
+    public void setActive(Boolean active) {
+        this.active = active != null ? active : true;
+    }
+
+    public Boolean getIsAdmin() {
+        return isAdmin != null ? isAdmin : false;
+    }
+
+    public void setIsAdmin(Boolean isAdmin) {
+        this.isAdmin = isAdmin != null ? isAdmin : false;
     }
 }
