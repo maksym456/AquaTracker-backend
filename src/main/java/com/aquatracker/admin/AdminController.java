@@ -141,6 +141,65 @@ public class AdminController {
     }
 
     /**
+     * Nadaje/odbiera uprawnienia administratora użytkownikowi
+     * PATCH /api/admin/users/{userId}/admin
+     */
+    @PatchMapping("/users/{userId}/admin")
+    @Transactional
+    public ResponseEntity<?> updateUserAdminStatus(
+            @PathVariable String userId,
+            @RequestBody Map<String, Object> request,
+            @RequestParam(required = false) String adminCognitoSub) {
+        try {
+            String userIdString = IdMapper.fromUserId(userId);
+            if (userIdString == null) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Invalid user ID format"));
+            }
+
+            Optional<User> userOpt = userRepository.findById(userIdString);
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            User user = userOpt.get();
+            Boolean isAdmin = request.get("isAdmin") instanceof Boolean 
+                    ? (Boolean) request.get("isAdmin")
+                    : Boolean.parseBoolean(request.get("isAdmin").toString());
+            
+            user.setIsAdmin(isAdmin);
+            user = userRepository.save(user);
+
+            // Logowanie akcji
+            if (adminCognitoSub != null && !adminCognitoSub.trim().isEmpty()) {
+                Optional<User> adminOpt = userRepository.findByCognitoSub(adminCognitoSub.trim());
+                if (adminOpt.isPresent()) {
+                    createAdminLogEntry(adminOpt.get(), "USER_ADMIN_STATUS_UPDATED", 
+                            "Zmieniono uprawnienia administratora",
+                            String.format("Uprawnienia administratora dla użytkownika %s zmienione na: %s", 
+                                    user.getEmail(), isAdmin ? "tak" : "nie"),
+                            Map.of("userId", userId, "isAdmin", isAdmin));
+                }
+            }
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            Map<String, Object> userDto = new HashMap<>();
+            userDto.put("id", IdMapper.toUserId(user.getId()));
+            userDto.put("email", user.getEmail());
+            userDto.put("username", user.getUsername());
+            userDto.put("active", user.getActive());
+            userDto.put("isAdmin", user.getIsAdmin());
+            response.put("user", userDto);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to update user admin status: " + e.getMessage()));
+        }
+    }
+
+    /**
      * Aktywuje/deaktywuje użytkownika
      * PATCH /api/admin/users/{userId}/status
      */
