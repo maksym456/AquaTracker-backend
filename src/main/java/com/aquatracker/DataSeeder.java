@@ -23,10 +23,10 @@ public class DataSeeder implements CommandLineRunner {
     public void run(String... args) throws Exception {
         if (fishRepository.count() == 0) {
             List<FishSpecies> fishList = List.of(
-                    new FishSpecies("Welonka (Złota rybka)", "Słodkowodna", 18, 24, "Azja", 6.0, 8.0, 5, 19, "spokojne", 1, "10-15 lat",
+                    new FishSpecies("Welonka", "Słodkowodna", 18, 24, "Azja", 6.0, 8.0, 5, 19, "spokojne", 1, "10-15 lat",
                             "Welonka to klasyczna, spokojna ryba akwariowa, idealna dla początkujących. Jest odporna i łatwa w utrzymaniu.",
                             "/fish/Welonka__Złota_rybka.png"),
-                    new FishSpecies("Gupik (Głupik)", "Słodkowodna", 22, 28, "Ameryka Południowa", 6.8, 8.0, 10, 30, "spokojne", 5, "2-3 lata",
+                    new FishSpecies("Gupik", "Słodkowodna", 22, 28, "Ameryka Południowa", 6.8, 8.0, 10, 30, "spokojne", 5, "2-3 lata",
                             "Gupik to mała, kolorowa ryba, która najlepiej czuje się w grupie. Jest bardzo aktywna i łatwa w hodowli.",
                             "/fish/Gupik__Głupik.png"),
                     new FishSpecies("Bojownik syjamski", "Słodkowodna", 25, 30, "Azja", 6.0, 8.0, 1, 19, "pół-agresywne", 1, "3-5 lat",
@@ -35,7 +35,7 @@ public class DataSeeder implements CommandLineRunner {
                     new FishSpecies("Neon Innesa", "Słodkowodna", 22, 26, "Ameryka Południowa", 6.5, 7.5, 1, 12, "spokojne", 10, "3-5 lat",
                             "Neon Innesa to drobna, energiczna ryba ławicowa, znana z intensywnego niebieskiego połysku widocznego nawet w słabym oświetleniu.",
                             "/fish/Neon_Innesa.png"),
-                    new FishSpecies("Skalar (Żaglowiec)", "Słodkowodna", 25, 29, "Ameryka Południowa", 6.0, 7.4, 5, 13, "pół-agresywne", 5, "10-15 lat",
+                    new FishSpecies("Skalar", "Słodkowodna", 25, 29, "Ameryka Południowa", 6.0, 7.4, 5, 13, "pół-agresywne", 5, "10-15 lat",
                             "Skalar (Żaglowiec) to ryba pół-agresywna, która najlepiej czuje się w grupie. Lubi dużo miejsca do pływania i rośliny, przy których może się chować. Może pokazywać dominujące zachowania wobec innych ryb, dlatego najlepiej trzymać ją z gatunkami o podobnym temperamencie.",
                             "/fish/Skalar__Żaglowiec.png"),
                     new FishSpecies("Mieczyk Hellera", "Słodkowodna", 24, 28, "Ameryka Północna", 6.0, 8.5, 10, 30, "pół-agresywne", 8, "3-5 lat",
@@ -62,7 +62,7 @@ public class DataSeeder implements CommandLineRunner {
                     new FishSpecies("Kirys pstry", "Słodkowodna", 23, 27, "Ameryka Południowa", 6.0, 7.0, 5, 15, "spokojne", 6, "3-5 lat",
                             "Kirysek pstry to spokojna ryba, która lubi przebywać przy dnie akwarium i chować się między roślinami. Najlepiej czuje się w grupie, wtedy porusza się naturalnie i aktywnie.",
                             "/fish/Kirys_pstry.png"),
-                    new FishSpecies("Glonojad (Zbrojnik)", "Słodkowodna", 23, 28, "Ameryka Południowa", 6.5, 7.5, 1, 15, "spokojne", 1, "3-7 lat",
+                    new FishSpecies("Glonojad", "Słodkowodna", 23, 28, "Ameryka Południowa", 6.5, 7.5, 1, 15, "spokojne", 1, "3-7 lat",
                             "Glonojad / Zbrojnik to spokojna ryba, która pomaga utrzymać akwarium w czystości, zjadając glony z roślin i szybów. Lubi kryjówki i spokojne miejsca w zbiorniku. Jest odporna i łatwa w utrzymaniu, dobrze nadaje się do akwarium z innymi spokojnymi rybami.",
                             "/fish/GlonojadZbrojnik-.png"),
                     new FishSpecies("Błazenek pomarańczowy", "Słonowodna", 25, 27, "Azja", 7.8, 8.4, 8, 25, "spokojne", 2, "1 rok",
@@ -77,7 +77,7 @@ public class DataSeeder implements CommandLineRunner {
                     new FishSpecies("Proporczykowiec", "Słodkowodna", 22, 26, "Afryka", 6.0, 7.5, 2, 10, "pół-agresywne", 4, "10-15 lat",
                             "Proporczykowiec to ryba pół-agresywna, która najlepiej czuje się w grupie. Lubi mieć kryjówki i miejsca do pływania. Może wykazywać dominujące zachowania wobec innych ryb, dlatego najlepiej trzymać ją z gatunkami o podobnym temperamencie.",
                             "/fish/Proporczykowiec.png"),
-                    new FishSpecies("Pyszczak (Malawi)", "Słodkowodna", 25, 28, "Afryka", 7.6, 8.8, 10, 25, "agresywne", 1, "8-10 lat",
+                    new FishSpecies("Pyszczak", "Słodkowodna", 25, 28, "Afryka", 7.6, 8.8, 10, 25, "agresywne", 1, "8-10 lat",
                             "Pyszczak (Malawi) to agresywna ryba, która najlepiej czuje się w swoim terytorium. Lubi mieć kryjówki i przestrzeń do pływania.",
                             "/fish/Pyszczak__Malawi.png"),
                     new FishSpecies("Księżniczka z Burundi", "Słodkowodna", 24, 28, "Afryka", 7.5, 9.0, 9, 19, "agresywne", 6, "5-10 lat",
@@ -103,11 +103,11 @@ public class DataSeeder implements CommandLineRunner {
             // Aktualizacja opisów dla istniejących ryb
             System.out.println("--- AKTUALIZACJA OPISÓW RYB ---");
             java.util.Map<String, String> fishDescriptions = new java.util.HashMap<>();
-            fishDescriptions.put("Welonka (Złota rybka)", "Welonka to klasyczna, spokojna ryba akwariowa, idealna dla początkujących. Jest odporna i łatwa w utrzymaniu.");
-            fishDescriptions.put("Gupik (Głupik)", "Gupik to mała, kolorowa ryba, która najlepiej czuje się w grupie. Jest bardzo aktywna i łatwa w hodowli.");
+            fishDescriptions.put("Welonka", "Welonka to klasyczna, spokojna ryba akwariowa, idealna dla początkujących. Jest odporna i łatwa w utrzymaniu.");
+            fishDescriptions.put("Gupik", "Gupik to mała, kolorowa ryba, która najlepiej czuje się w grupie. Jest bardzo aktywna i łatwa w hodowli.");
             fishDescriptions.put("Bojownik syjamski", "Bojownik syjamski to efektowna, majestatyczna ryba znana z długich, falujących płetw i intensywnych barw. Samce są terytorialne i potrafią być agresywne wobec innych samców oraz ryb o podobnych płetwach, dlatego zwykle trzyma się je pojedynczo.");
             fishDescriptions.put("Neon Innesa", "Neon Innesa to drobna, energiczna ryba ławicowa, znana z intensywnego niebieskiego połysku widocznego nawet w słabym oświetleniu.");
-            fishDescriptions.put("Skalar (Żaglowiec)", "Skalar (Żaglowiec) to ryba pół-agresywna, która najlepiej czuje się w grupie. Lubi dużo miejsca do pływania i rośliny, przy których może się chować. Może pokazywać dominujące zachowania wobec innych ryb, dlatego najlepiej trzymać ją z gatunkami o podobnym temperamencie.");
+            fishDescriptions.put("Skalar", "Skalar (Żaglowiec) to ryba pół-agresywna, która najlepiej czuje się w grupie. Lubi dużo miejsca do pływania i rośliny, przy których może się chować. Może pokazywać dominujące zachowania wobec innych ryb, dlatego najlepiej trzymać ją z gatunkami o podobnym temperamencie.");
             fishDescriptions.put("Mieczyk Hellera", "Mieczyk Hellera to żyworodna, wyrazista ryba znana z charakterystycznego 'mieczyka' na ogonie samców. Jest ruchliwa, wytrzymała i dobrze odnajduje się w większych akwariach. Choć generalnie towarzyska, potrafi wykazywać lekko dominujące zachowania, zwłaszcza samce między sobą, dlatego najlepiej trzymać ją w większej grupie.");
             fishDescriptions.put("Molinezja", "Molinezja to spokojna ryba, która najlepiej czuje się w grupie. Jest aktywna i lubi pływać wśród roślin. Jest odporna i łatwa w utrzymaniu, dobrze nadaje się do akwarium z innymi spokojnymi rybami.");
             fishDescriptions.put("Gurami mozaikowy", "Gurami mozaikowy to spokojna ryba o charakterystycznym, drobnym, mozaikowym wzorze na ciele. Porusza się powoli i często wykorzystuje wydłużone płetwy piersiowe do badania otoczenia.");
@@ -116,12 +116,12 @@ public class DataSeeder implements CommandLineRunner {
             fishDescriptions.put("Razbora klinowa", "Razbora klinowa to spokojna ryba ławicowa, która najlepiej czuje się w grupie. Jest aktywna i porusza się wśród roślin, tworząc efektowne grupy. Lubi dobrze oświetlone akwaria z miejscami do pływania i kryjówkami.");
             fishDescriptions.put("Tęczanka neonowa", "Tęczanka neonowa to spokojna ryba ławicowa, która najlepiej czuje się w grupie. Ma kolorowe, metaliczne ubarwienie i lubi poruszać się wśród roślin. Jest odporna i łatwa w utrzymaniu, dobrze nadaje się do akwarium z innymi spokojnymi rybami.");
             fishDescriptions.put("Kirys pstry", "Kirysek pstry to spokojna ryba, która lubi przebywać przy dnie akwarium i chować się między roślinami. Najlepiej czuje się w grupie, wtedy porusza się naturalnie i aktywnie.");
-            fishDescriptions.put("Glonojad (Zbrojnik)", "Glonojad / Zbrojnik to spokojna ryba, która pomaga utrzymać akwarium w czystości, zjadając glony z roślin i szybów. Lubi kryjówki i spokojne miejsca w zbiorniku. Jest odporna i łatwa w utrzymaniu, dobrze nadaje się do akwarium z innymi spokojnymi rybami.");
+            fishDescriptions.put("Glonojad", "Glonojad / Zbrojnik to spokojna ryba, która pomaga utrzymać akwarium w czystości, zjadając glony z roślin i szybów. Lubi kryjówki i spokojne miejsca w zbiorniku. Jest odporna i łatwa w utrzymaniu, dobrze nadaje się do akwarium z innymi spokojnymi rybami.");
             fishDescriptions.put("Błazenek pomarańczowy", "Błazenek pomarańczowy to spokojna ryba, która najlepiej czuje się w parze. Lubi miejsca do ukrycia, np. między skałami lub wśród korali. Jest odporna, ale wymaga stabilnych warunków wody słonowodnej i odpowiedniej temperatury.");
             fishDescriptions.put("Pirania czerwona", "Pirania czerwona to agresywna ryba, która najlepiej żyje w grupie. Potrzebuje dużo miejsca do pływania i odpowiedniego akwarium, aby mogła wykazywać naturalne zachowania.");
             fishDescriptions.put("Pokolec królewski", "Pokolec królewski to spokojna ryba, która najlepiej trzymać pojedynczo. Lubi mieć miejsca do ukrycia, np. między skałami lub koralami. Jest odporna i może żyć długo w akwarium słonowodnym przy stabilnych warunkach wody.");
             fishDescriptions.put("Proporczykowiec", "Proporczykowiec to ryba pół-agresywna, która najlepiej czuje się w grupie. Lubi mieć kryjówki i miejsca do pływania. Może wykazywać dominujące zachowania wobec innych ryb, dlatego najlepiej trzymać ją z gatunkami o podobnym temperamencie.");
-            fishDescriptions.put("Pyszczak (Malawi)", "Pyszczak (Malawi) to agresywna ryba, która najlepiej czuje się w swoim terytorium. Lubi mieć kryjówki i przestrzeń do pływania.");
+            fishDescriptions.put("Pyszczak", "Pyszczak (Malawi) to agresywna ryba, która najlepiej czuje się w swoim terytorium. Lubi mieć kryjówki i przestrzeń do pływania.");
             fishDescriptions.put("Księżniczka z Burundi", "Księżniczka z Burundi to agresywna ryba, która najlepiej czuje się w grupie. Lubi mieć kryjówki i dużo miejsca do pływania.");
             fishDescriptions.put("Kolcobrzuch karłowaty", "Kolcobrzuch karłowaty to agresywna ryba, która najlepiej trzymać pojedynczo. Ma mocny charakter i potrafi bronić swojego terytorium. Lubi kryjówki i miejsca do ukrycia. Jest odporna, ale wymaga stabilnych warunków wody.");
             fishDescriptions.put("Mandaryn wspaniały", "Mandaryn wspaniały to spokojna ryba, która najlepiej trzymać pojedynczo. Lubi miejsca do ukrycia i rośliny lub koralowce, w których może się poruszać. Jest wrażliwa na warunki wody, dlatego wymaga stabilnego akwarium słonowodnego.");

@@ -220,14 +220,14 @@ public class FishController {
         try {
             Map<String, Map<String, String>> fishData = new HashMap<>();
             
-            // Welonka (Złota rybka)
+            // Welonka
             Map<String, String> welonka = new HashMap<>();
             welonka.put("description", "Welonka to klasyczna, spokojna ryba akwariowa, idealna dla początkujących. Jest odporna i łatwa w utrzymaniu.");
             welonka.put("image", "/fish/Welonka__Złota_rybka.png");
             welonka.put("iconName", "Welonka__Złota_rybka.png");
             fishData.put("Welonka", welonka);
             
-            // Gupik (Głupik)
+            // Gupik
             Map<String, String> gupik = new HashMap<>();
             gupik.put("description", "Gupik to mała, kolorowa ryba, która najlepiej czuje się w grupie. Jest bardzo aktywna i łatwa w hodowli.");
             gupik.put("image", "/fish/Gupik__Głupik.png");
@@ -248,7 +248,7 @@ public class FishController {
             neon.put("iconName", "Neon_Innesa.png");
             fishData.put("Neon Innesa", neon);
             
-            // Skalar (Żaglowiec)
+            // Skalar
             Map<String, String> skalar = new HashMap<>();
             skalar.put("description", "Skalar (Żaglowiec) to ryba pół-agresywna, która najlepiej czuje się w grupie. Lubi dużo miejsca do pływania i rośliny, przy których może się chować. Może pokazywać dominujące zachowania wobec innych ryb, dlatego najlepiej trzymać ją z gatunkami o podobnym temperamencie.");
             skalar.put("image", "/fish/Skalar__Żaglowiec.png");
@@ -311,7 +311,7 @@ public class FishController {
             kirys.put("iconName", "Kirys_pstry.png");
             fishData.put("Kirys pstry", kirys);
             
-            // Glonojad (Zbrojnik)
+            // Glonojad
             Map<String, String> glonojad = new HashMap<>();
             glonojad.put("description", "Glonojad / Zbrojnik to spokojna ryba, która pomaga utrzymać akwarium w czystości, zjadając glony z roślin i szybów. Lubi kryjówki i spokojne miejsca w zbiorniku. Jest odporna i łatwa w utrzymaniu, dobrze nadaje się do akwarium z innymi spokojnymi rybami.");
             glonojad.put("image", "/fish/GlonojadZbrojnik-.png");
@@ -346,7 +346,7 @@ public class FishController {
             proporczykowiec.put("iconName", "Proporczykowiec.png");
             fishData.put("Proporczykowiec", proporczykowiec);
             
-            // Pyszczak (Malawi)
+            // Pyszczak
             Map<String, String> pyszczak = new HashMap<>();
             pyszczak.put("description", "Pyszczak (Malawi) to agresywna ryba, która najlepiej czuje się w swoim terytorium. Lubi mieć kryjówki i przestrzeń do pływania.");
             pyszczak.put("image", "/fish/Pyszczak__Malawi.png");

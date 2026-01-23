@@ -29,9 +29,9 @@ public class FishMockController {
 
     @PostConstruct
     void init() {
-        seed(new Fish(null, "Welonka (Złota rybka)", "Słodkowodna", "18-22", "temperate", "7.0-8.0", "5-19",
+        seed(new Fish(null, "Welonka", "Słodkowodna", "18-22", "temperate", "7.0-8.0", "5-19",
                 "spokojne", 1, "10-15 lat", "Welonka__Złota_rybka.png"));
-        seed(new Fish(null, "Gupik (Głupik)", "Słodkowodna", "22-28", "tropical", "6.8-7.8", "8-20",
+        seed(new Fish(null, "Gupik", "Słodkowodna", "22-28", "tropical", "6.8-7.8", "8-20",
                 "spokojne", 6, "2-3 lata", "Gupik__Głupik.png"));
         seed(new Fish(null, "Neon Innesa", "Słodkowodna", "20-26", "amazon", "5.0-7.0", "1-10",
                 "spokojne", 10, "3-5 lat", "Neon_Innesa.png"));
