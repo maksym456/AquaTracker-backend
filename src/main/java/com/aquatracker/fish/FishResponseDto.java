@@ -12,6 +12,7 @@ public class FishResponseDto {
     private Integer minShoalSize;
     private String lifeSpan;
     private String iconName;
+    private String description;
 
     public FishResponseDto() {}
 
@@ -27,6 +28,7 @@ public class FishResponseDto {
         this.minShoalSize = fish.getMinShoalSize();
         this.lifeSpan = fish.getLifeSpan();
         this.iconName = fish.getIconName();
+        this.description = fish.getDescription();
     }
 
     public Long getId() {
@@ -115,5 +117,13 @@ public class FishResponseDto {
 
     public void setIconName(String iconName) {
         this.iconName = iconName;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }
