@@ -90,7 +90,7 @@ public class ContactController {
 
             // Znajdź odbiorcę po emailu
             User recipient = userRepository.findByEmail(recipientEmail.trim())
-                    .orElseThrow(() -> new RuntimeException("Recipient not found in system"));
+                    .orElseThrow(() -> new RuntimeException("Nie znaleziono zarejestrowanego adresu email o takiej nazwie w bazie danych"));
 
             // Sprawdź czy już istnieje kontakt (jako friend)
             if (contactRepository.existsByUser_IdAndFriend_Id(senderId, recipient.getId())) {
