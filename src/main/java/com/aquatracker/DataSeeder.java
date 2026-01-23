@@ -4,6 +4,8 @@ import com.aquatracker.fish.FishSpecies;
 import com.aquatracker.fish.FishSpeciesRepository;
 import com.aquatracker.plant.Plant;
 import com.aquatracker.plant.PlantRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import java.util.List;
@@ -11,6 +13,7 @@ import java.util.List;
 @Component
 public class DataSeeder implements CommandLineRunner {
 
+    private static final Logger logger = LoggerFactory.getLogger(DataSeeder.class);
     private final FishSpeciesRepository fishRepository;
     private final PlantRepository plantRepository;
 
@@ -98,10 +101,10 @@ public class DataSeeder implements CommandLineRunner {
             );
 
             fishRepository.saveAll(fishList);
-            System.out.println("--- BAZA DANYCH RYB ZOSTAŁA ZASILONA DANYMI ---");
+            logger.info("--- BAZA DANYCH RYB ZOSTAŁA ZASILONA DANYMI ---");
         } else {
             // Aktualizacja opisów dla istniejących ryb
-            System.out.println("--- AKTUALIZACJA OPISÓW RYB ---");
+            logger.info("--- AKTUALIZACJA OPISÓW RYB ---");
             java.util.Map<String, String> fishDescriptions = new java.util.HashMap<>();
             fishDescriptions.put("Welonka", "Welonka to klasyczna, spokojna ryba akwariowa, idealna dla początkujących. Jest odporna i łatwa w utrzymaniu.");
             fishDescriptions.put("Gupik", "Gupik to mała, kolorowa ryba, która najlepiej czuje się w grupie. Jest bardzo aktywna i łatwa w hodowli.");
@@ -143,9 +146,9 @@ public class DataSeeder implements CommandLineRunner {
                 }
             }
             if (updatedCount > 0) {
-                System.out.println("--- ZAKTUALIZOWANO OPISY DLA " + updatedCount + " RYB ---");
+                logger.info("--- ZAKTUALIZOWANO OPISY DLA " + updatedCount + " RYB ---");
             } else {
-                System.out.println("--- WSZYSTKIE RYBY MAJĄ JUŻ POPRAWNE OPISY ---");
+                logger.info("--- WSZYSTKIE RYBY MAJĄ JUŻ POPRAWNE OPISY ---");
             }
         }
 
@@ -187,10 +190,10 @@ public class DataSeeder implements CommandLineRunner {
             );
 
             plantRepository.saveAll(plantList);
-            System.out.println("--- BAZA DANYCH ROŚLIN ZOSTAŁA ZASILONA DANYMI ---");
+            logger.info("--- BAZA DANYCH ROŚLIN ZOSTAŁA ZASILONA DANYMI ---");
         } else {
             // Aktualizacja opisów dla istniejących roślin
-            System.out.println("--- AKTUALIZACJA OPISÓW ROŚLIN ---");
+            logger.info("--- AKTUALIZACJA OPISÓW ROŚLIN ---");
             java.util.Map<String, String> plantDescriptions = new java.util.HashMap<>();
             plantDescriptions.put("Moczarka", "Szybko rosnąca roślina łodygowa (tlenowa), świetna na start akwarium - mocno pobiera azotany i ogranicza glony. Może rosnąć posadzona w podłożu lub pływająca. Łatwa w uprawie, dobrze znosi słabsze światło; przycina się i sadzi ponownie wierzchołki.");
             plantDescriptions.put("Nurzaniec", "Roślina rozetowa o długich, taśmowatych liściach, idealna na tło. Szybko się rozrasta przez rozłogi. Lubi stabilne warunki; nie zakopuj nasady (korony). W razie przerostu skracaj liście i usuwaj najstarsze.");
@@ -220,9 +223,9 @@ public class DataSeeder implements CommandLineRunner {
                 }
             }
             if (updatedCount > 0) {
-                System.out.println("--- ZAKTUALIZOWANO OPISY DLA " + updatedCount + " ROŚLIN ---");
+                logger.info("--- ZAKTUALIZOWANO OPISY DLA " + updatedCount + " ROŚLIN ---");
             } else {
-                System.out.println("--- WSZYSTKIE ROŚLINY MAJĄ JUŻ OPISY ---");
+                logger.info("--- WSZYSTKIE ROŚLINY MAJĄ JUŻ OPISY ---");
             }
         }
     }

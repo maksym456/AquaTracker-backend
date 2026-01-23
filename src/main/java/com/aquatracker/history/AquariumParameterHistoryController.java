@@ -1,8 +1,6 @@
 package com.aquatracker.history;
 
 import com.aquatracker.common.IdMapper;
-import com.aquatracker.user.User;
-import com.aquatracker.user.UserRepository;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,13 +16,10 @@ import java.util.stream.Collectors;
 public class AquariumParameterHistoryController {
 
     private final AquariumParameterHistoryRepository historyRepository;
-    private final UserRepository userRepository;
 
     public AquariumParameterHistoryController(
-            AquariumParameterHistoryRepository historyRepository,
-            UserRepository userRepository) {
+            AquariumParameterHistoryRepository historyRepository) {
         this.historyRepository = historyRepository;
-        this.userRepository = userRepository;
     }
 
     @GetMapping("/aquarium/{aquariumId}")

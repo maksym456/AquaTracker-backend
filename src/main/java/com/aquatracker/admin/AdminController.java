@@ -151,15 +151,10 @@ public class AdminController {
             @RequestBody Map<String, Object> request,
             @RequestParam(required = false) String adminCognitoSub) {
         try {
-            String userIdString = IdMapper.fromUserId(userId);
-            if (userIdString == null) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("error", "Invalid user ID format"));
-            }
-
-            Optional<User> userOpt = userRepository.findById(userIdString);
+            Optional<User> userOpt = findUserById(userId);
             if (userOpt.isEmpty()) {
-                return ResponseEntity.notFound().build();
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Invalid user ID format or user not found"));
             }
 
             User user = userOpt.get();
@@ -171,26 +166,15 @@ public class AdminController {
             user = userRepository.save(user);
 
             // Logowanie akcji
-            if (adminCognitoSub != null && !adminCognitoSub.trim().isEmpty()) {
-                Optional<User> adminOpt = userRepository.findByCognitoSub(adminCognitoSub.trim());
-                if (adminOpt.isPresent()) {
-                    createAdminLogEntry(adminOpt.get(), "USER_ADMIN_STATUS_UPDATED", 
-                            "Zmieniono uprawnienia administratora",
-                            String.format("Uprawnienia administratora dla użytkownika %s zmienione na: %s", 
-                                    user.getEmail(), isAdmin ? "tak" : "nie"),
-                            Map.of("userId", userId, "isAdmin", isAdmin));
-                }
-            }
+            logAdminAction(adminCognitoSub, "USER_ADMIN_STATUS_UPDATED", 
+                    "Zmieniono uprawnienia administratora",
+                    String.format("Uprawnienia administratora dla użytkownika %s zmienione na: %s", 
+                            user.getEmail(), isAdmin ? "tak" : "nie"),
+                    Map.of("userId", userId, "isAdmin", isAdmin));
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            Map<String, Object> userDto = new HashMap<>();
-            userDto.put("id", IdMapper.toUserId(user.getId()));
-            userDto.put("email", user.getEmail());
-            userDto.put("username", user.getUsername());
-            userDto.put("active", user.getActive());
-            userDto.put("isAdmin", user.getIsAdmin());
-            response.put("user", userDto);
+            response.put("user", createUserDto(user));
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
@@ -210,15 +194,10 @@ public class AdminController {
             @RequestBody Map<String, Object> request,
             @RequestParam(required = false) String adminCognitoSub) {
         try {
-            String userIdString = IdMapper.fromUserId(userId);
-            if (userIdString == null) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("error", "Invalid user ID format"));
-            }
-
-            Optional<User> userOpt = userRepository.findById(userIdString);
+            Optional<User> userOpt = findUserById(userId);
             if (userOpt.isEmpty()) {
-                return ResponseEntity.notFound().build();
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Invalid user ID format or user not found"));
             }
 
             User user = userOpt.get();
@@ -230,26 +209,15 @@ public class AdminController {
             user = userRepository.save(user);
 
             // Logowanie akcji
-            if (adminCognitoSub != null && !adminCognitoSub.trim().isEmpty()) {
-                Optional<User> adminOpt = userRepository.findByCognitoSub(adminCognitoSub.trim());
-                if (adminOpt.isPresent()) {
-                    createAdminLogEntry(adminOpt.get(), "USER_STATUS_UPDATED", 
-                            "Zmieniono status użytkownika",
-                            String.format("Status użytkownika %s zmieniony na: %s", 
-                                    user.getEmail(), active ? "aktywny" : "nieaktywny"),
-                            Map.of("userId", userId, "active", active));
-                }
-            }
+            logAdminAction(adminCognitoSub, "USER_STATUS_UPDATED", 
+                    "Zmieniono status użytkownika",
+                    String.format("Status użytkownika %s zmieniony na: %s", 
+                            user.getEmail(), active ? "aktywny" : "nieaktywny"),
+                    Map.of("userId", userId, "active", active));
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            Map<String, Object> userDto = new HashMap<>();
-            userDto.put("id", IdMapper.toUserId(user.getId()));
-            userDto.put("email", user.getEmail());
-            userDto.put("username", user.getUsername());
-            userDto.put("active", user.getActive());
-            userDto.put("isAdmin", user.getIsAdmin());
-            response.put("user", userDto);
+            response.put("user", createUserDto(user));
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
@@ -268,30 +236,20 @@ public class AdminController {
             @PathVariable String userId,
             @RequestParam(required = false) String adminCognitoSub) {
         try {
-            String userIdString = IdMapper.fromUserId(userId);
-            if (userIdString == null) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("error", "Invalid user ID format"));
-            }
-
-            Optional<User> userOpt = userRepository.findById(userIdString);
+            Optional<User> userOpt = findUserById(userId);
             if (userOpt.isEmpty()) {
-                return ResponseEntity.notFound().build();
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Invalid user ID format or user not found"));
             }
 
             User user = userOpt.get();
             String userEmail = user.getEmail();
 
             // Logowanie przed usunięciem
-            if (adminCognitoSub != null && !adminCognitoSub.trim().isEmpty()) {
-                Optional<User> adminOpt = userRepository.findByCognitoSub(adminCognitoSub.trim());
-                if (adminOpt.isPresent()) {
-                    createAdminLogEntry(adminOpt.get(), "USER_DELETED",
-                            "Usunięto użytkownika",
-                            String.format("Użytkownik %s został usunięty", userEmail),
-                            Map.of("userId", userId, "email", userEmail));
-                }
-            }
+            logAdminAction(adminCognitoSub, "USER_DELETED",
+                    "Usunięto użytkownika",
+                    String.format("Użytkownik %s został usunięty", userEmail),
+                    Map.of("userId", userId, "email", userEmail));
 
             userRepository.delete(user);
 
@@ -422,15 +380,10 @@ public class AdminController {
             String aquariumName = aquarium.getName();
 
             // Logowanie przed usunięciem
-            if (adminCognitoSub != null && !adminCognitoSub.trim().isEmpty()) {
-                Optional<User> adminOpt = userRepository.findByCognitoSub(adminCognitoSub.trim());
-                if (adminOpt.isPresent()) {
-                    createAdminLogEntry(adminOpt.get(), "AQUARIUM_DELETED",
-                            "Usunięto akwarium",
-                            String.format("Akwarium '%s' zostało usunięte przez administratora", aquariumName),
-                            Map.of("aquariumId", aquariumId, "aquariumName", aquariumName));
-                }
-            }
+            logAdminAction(adminCognitoSub, "AQUARIUM_DELETED",
+                    "Usunięto akwarium",
+                    String.format("Akwarium '%s' zostało usunięte przez administratora", aquariumName),
+                    Map.of("aquariumId", aquariumId, "aquariumName", aquariumName));
 
             // Usunięcie akwarium (kaskadowo usunie ryby i rośliny dzięki relacjom)
             aquariumRepository.delete(aquarium);
@@ -519,16 +472,11 @@ public class AdminController {
             int count = fish.getFishCount();
 
             // Logowanie przed usunięciem
-            if (adminCognitoSub != null && !adminCognitoSub.trim().isEmpty()) {
-                Optional<User> adminOpt = userRepository.findByCognitoSub(adminCognitoSub.trim());
-                if (adminOpt.isPresent()) {
-                    createAdminLogEntry(adminOpt.get(), "FISH_DELETED",
-                            "Usunięto ryby z akwarium",
-                            String.format("Usunięto %d %s z akwarium '%s'", count, speciesName, aquariumName),
-                            Map.of("fishId", fishId, "speciesName", speciesName, 
-                                   "aquariumName", aquariumName, "count", count));
-                }
-            }
+            logAdminAction(adminCognitoSub, "FISH_DELETED",
+                    "Usunięto ryby z akwarium",
+                    String.format("Usunięto %d %s z akwarium '%s'", count, speciesName, aquariumName),
+                    Map.of("fishId", fishId, "speciesName", speciesName, 
+                           "aquariumName", aquariumName, "count", count));
 
             aquariumFishRepository.delete(fish);
 
@@ -616,16 +564,11 @@ public class AdminController {
             int count = plant.getPlantCount();
 
             // Logowanie przed usunięciem
-            if (adminCognitoSub != null && !adminCognitoSub.trim().isEmpty()) {
-                Optional<User> adminOpt = userRepository.findByCognitoSub(adminCognitoSub.trim());
-                if (adminOpt.isPresent()) {
-                    createAdminLogEntry(adminOpt.get(), "PLANT_DELETED",
-                            "Usunięto rośliny z akwarium",
-                            String.format("Usunięto %d %s z akwarium '%s'", count, plantName, aquariumName),
-                            Map.of("plantId", plantId, "plantName", plantName, 
-                                   "aquariumName", aquariumName, "count", count));
-                }
-            }
+            logAdminAction(adminCognitoSub, "PLANT_DELETED",
+                    "Usunięto rośliny z akwarium",
+                    String.format("Usunięto %d %s z akwarium '%s'", count, plantName, aquariumName),
+                    Map.of("plantId", plantId, "plantName", plantName, 
+                           "aquariumName", aquariumName, "count", count));
 
             aquariumPlantRepository.delete(plant);
 
@@ -633,6 +576,50 @@ public class AdminController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Failed to delete plant: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Pomocnicza metoda do walidacji i pobrania użytkownika po userId
+     * @param userId ID użytkownika (może być w formacie z IdMapper)
+     * @return Optional z użytkownikiem lub pusty Optional jeśli nie znaleziono
+     */
+    private Optional<User> findUserById(String userId) {
+        String userIdString = IdMapper.fromUserId(userId);
+        if (userIdString == null) {
+            return Optional.empty();
+        }
+        return userRepository.findById(userIdString);
+    }
+
+    /**
+     * Pomocnicza metoda do tworzenia DTO użytkownika
+     */
+    private Map<String, Object> createUserDto(User user) {
+        Map<String, Object> userDto = new HashMap<>();
+        userDto.put("id", IdMapper.toUserId(user.getId()));
+        userDto.put("email", user.getEmail());
+        userDto.put("username", user.getUsername());
+        userDto.put("active", user.getActive());
+        userDto.put("isAdmin", user.getIsAdmin());
+        return userDto;
+    }
+
+    /**
+     * Pomocnicza metoda do logowania akcji administratora
+     * @param adminCognitoSub Cognito Sub administratora wykonującego akcję
+     * @param actionType Typ akcji (np. "USER_ADMIN_STATUS_UPDATED")
+     * @param title Tytuł wpisu logu
+     * @param message Wiadomość wpisu logu
+     * @param metadata Metadane akcji
+     */
+    private void logAdminAction(String adminCognitoSub, String actionType, String title, 
+                                String message, Map<String, Object> metadata) {
+        if (adminCognitoSub != null && !adminCognitoSub.trim().isEmpty()) {
+            Optional<User> adminOpt = userRepository.findByCognitoSub(adminCognitoSub.trim());
+            if (adminOpt.isPresent()) {
+                createAdminLogEntry(adminOpt.get(), actionType, title, message, metadata);
+            }
         }
     }
 

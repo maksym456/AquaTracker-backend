@@ -300,9 +300,9 @@ public class AquariumController {
 
             aquarium = aquariumRepository.save(aquarium);
             
-            System.out.println("✓ Aquarium created successfully with ID: " + aquarium.getId());
-            System.out.println("  Name: " + aquarium.getName());
-            System.out.println("  Owner: " + (aquarium.getOwner() != null ? aquarium.getOwner().getEmail() : "null"));
+            logger.info("✓ Aquarium created successfully with ID: {}", aquarium.getId());
+            logger.info("  Name: {}", aquarium.getName());
+            logger.info("  Owner: {}", aquarium.getOwner() != null ? aquarium.getOwner().getEmail() : "null");
 
             User user = aquarium.getOwner();
             LogEntry logEntry = createLogEntry(user, aquarium, "AQUARIUM_CREATED", "Utworzono akwarium", 
