@@ -232,7 +232,7 @@ public class FishController {
             gupik.put("description", "Gupik to mała, kolorowa ryba, która najlepiej czuje się w grupie. Jest bardzo aktywna i łatwa w hodowli.");
             gupik.put("image", "/fish/Gupik__Głupik.png");
             gupik.put("iconName", "Gupik__Głupik.png");
-            fishData.put("Gupik (Głupik)", gupik);
+            fishData.put("Gupik", gupik);
             
             // Bojownik syjamski
             Map<String, String> bojownik = new HashMap<>();
