@@ -13,6 +13,49 @@ import java.util.Set;
 @Service
 public class AquariumValidationService {
 
+    /**
+     * Sprawdza, czy daną rybę można dodać do akwarium (typ wody, temperatura, pH, twardość).
+     * Zwraca listę błędów; pusta lista = można dodać.
+     */
+    public List<String> validateFishForAquarium(Aquarium aquarium, FishSpecies fish) {
+        List<String> errors = new ArrayList<>();
+        if (aquarium == null || fish == null) {
+            if (aquarium == null) errors.add("Akwarium jest wymagane");
+            if (fish == null) errors.add("Gatunek ryby jest wymagany");
+            return errors;
+        }
+
+        if (fish.getWaterType() != null && aquarium.getWaterType() != null
+                && !fish.getWaterType().equals(aquarium.getWaterType())) {
+            errors.add(String.format("Niezgodność typu wody: akwarium %s, ryba %s wymaga %s.",
+                    aquarium.getWaterType(), fish.getName(), fish.getWaterType()));
+        }
+
+        double temp = aquarium.getTemperatureC();
+        if (temp > 0 && (temp < fish.getTempMinC() || temp > fish.getTempMaxC())) {
+            errors.add(String.format("Temperatura %.1f°C poza zakresem dla %s (%d–%d °C).",
+                    temp, fish.getName(), fish.getTempMinC(), fish.getTempMaxC()));
+        }
+
+        if (aquarium.getPh() != null) {
+            double ph = aquarium.getPh();
+            if (ph < fish.getPhMin() || ph > fish.getPhMax()) {
+                errors.add(String.format("pH %.2f poza zakresem dla %s (%.1f–%.1f).",
+                        ph, fish.getName(), fish.getPhMin(), fish.getPhMax()));
+            }
+        }
+
+        if (aquarium.getHardnessDGH() != null) {
+            int hardness = aquarium.getHardnessDGH();
+            if (hardness < fish.getGhMin() || hardness > fish.getGhMax()) {
+                errors.add(String.format("Twardość %d dGH poza zakresem dla %s (%d–%d °dGH).",
+                        hardness, fish.getName(), fish.getGhMin(), fish.getGhMax()));
+            }
+        }
+
+        return errors;
+    }
+
     public AquariumStatusDto validateAquarium(Aquarium aquarium) {
         AquariumStatusDto status = new AquariumStatusDto();
         List<AquariumStatusDto.StatusIssueDto> issues = new ArrayList<>();

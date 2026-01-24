@@ -1,6 +1,8 @@
 package com.aquatracker.fish;
-import org.springframework.context.annotation.Profile;
+
 import com.aquatracker.common.ErrorResponseDto;
+import com.aquatracker.common.FishSpeciesValidator;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -114,22 +116,28 @@ public class FishController {
             fish.setDescription(request.getDescription() != null ? request.getDescription() : "");
             fish.setImage(request.getImage() != null ? request.getImage() : "");
             fish.setWaterType(waterType);
-            fish.setTempMinC(request.getTempRange() != null && !request.getTempRange().isEmpty() 
-                ? request.getTempRange().get(0) : 22);
-            fish.setTempMaxC(request.getTempRange() != null && request.getTempRange().size() > 1 
-                ? request.getTempRange().get(1) : 26);
+            fish.setTempMinC(request.getTempRange() != null && !request.getTempRange().isEmpty()
+                    ? request.getTempRange().get(0) : 22);
+            fish.setTempMaxC(request.getTempRange() != null && request.getTempRange().size() > 1
+                    ? request.getTempRange().get(1) : 26);
             fish.setBiotype(request.getBiotope() != null ? request.getBiotope() : "");
-            fish.setPhMin(request.getPhRange() != null && !request.getPhRange().isEmpty() 
-                ? request.getPhRange().get(0) : 6.5);
-            fish.setPhMax(request.getPhRange() != null && request.getPhRange().size() > 1 
-                ? request.getPhRange().get(1) : 7.5);
-            fish.setGhMin(request.getHardness() != null && !request.getHardness().isEmpty() 
-                ? request.getHardness().get(0) : 5);
-            fish.setGhMax(request.getHardness() != null && request.getHardness().size() > 1 
-                ? request.getHardness().get(1) : 15);
+            fish.setPhMin(request.getPhRange() != null && !request.getPhRange().isEmpty()
+                    ? request.getPhRange().get(0) : 6.5);
+            fish.setPhMax(request.getPhRange() != null && request.getPhRange().size() > 1
+                    ? request.getPhRange().get(1) : 7.5);
+            fish.setGhMin(request.getHardness() != null && !request.getHardness().isEmpty()
+                    ? request.getHardness().get(0) : 5);
+            fish.setGhMax(request.getHardness() != null && request.getHardness().size() > 1
+                    ? request.getHardness().get(1) : 15);
             fish.setTemperament(request.getTemperament() != null ? request.getTemperament() : "spokojne");
             fish.setMinSchoolSize(request.getMinSchoolSize() != null ? request.getMinSchoolSize() : 1);
             fish.setLifespan(request.getLifespan() != null ? request.getLifespan() : "3-5 lat");
+
+            java.util.List<String> validationErrors = FishSpeciesValidator.validateFishSpecies(fish);
+            if (!validationErrors.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", validationErrors.get(0), "validationErrors", validationErrors));
+            }
 
             fish = fishRepository.save(fish);
 
@@ -188,6 +196,12 @@ public class FishController {
                         }
                         if (request.getLifespan() != null) {
                             fish.setLifespan(request.getLifespan());
+                        }
+
+                        java.util.List<String> validationErrors = FishSpeciesValidator.validateFishSpecies(fish);
+                        if (!validationErrors.isEmpty()) {
+                            return ResponseEntity.badRequest()
+                                    .body(Map.<String, Object>of("error", validationErrors.get(0), "validationErrors", validationErrors));
                         }
 
                         fish = fishRepository.save(fish);
