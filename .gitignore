@@ -49,6 +49,10 @@ playwright/.cache/
 .env.local
 .env.test
 
+# Local configuration files with sensitive data
+application-local.properties
+application-prod.properties
+
 # Other temp files
 *.log
 log.html   

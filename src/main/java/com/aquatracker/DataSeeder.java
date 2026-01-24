@@ -59,7 +59,7 @@ public class DataSeeder implements CommandLineRunner {
                     new FishSpecies("Razbora klinowa", "Słodkowodna", 24, 27, "Azja", 5.0, 7.5, 1, 12, "spokojne", 10, "5-8 lat",
                             "Razbora klinowa to spokojna ryba ławicowa, która najlepiej czuje się w grupie. Jest aktywna i porusza się wśród roślin, tworząc efektowne grupy. Lubi dobrze oświetlone akwaria z miejscami do pływania i kryjówkami.",
                             "/fish/Razbora_klinowa.png"),
-                    new FishSpecies("Tęczanka neonowa", "Słodkowodna", 25, 28, "Austalia/Oceania", 6.5, 7.5, 5, 15, "spokojne", 6, "4-6 lat",
+                    new FishSpecies("Tęczanka neonowa", "Słodkowodna", 25, 28, "Australia/Oceania", 6.5, 7.5, 5, 15, "spokojne", 6, "4-6 lat",
                             "Tęczanka neonowa to spokojna ryba ławicowa, która najlepiej czuje się w grupie. Ma kolorowe, metaliczne ubarwienie i lubi poruszać się wśród roślin. Jest odporna i łatwa w utrzymaniu, dobrze nadaje się do akwarium z innymi spokojnymi rybami.",
                             "/fish/Tęczanka_neonowa.png"),
                     new FishSpecies("Kirys pstry", "Słodkowodna", 23, 27, "Ameryka Południowa", 6.0, 7.0, 5, 15, "spokojne", 6, "3-5 lat",
@@ -150,6 +150,19 @@ public class DataSeeder implements CommandLineRunner {
             } else {
                 logger.info("--- WSZYSTKIE RYBY MAJĄ JUŻ POPRAWNE OPISY ---");
             }
+
+            // Korekta biotypu Tęczanki neonowej: literówka "Austalia" -> "Australia" (dla istniejących rekordów)
+            int biotypeFixed = 0;
+            for (FishSpecies fish : allFishes) {
+                if ("Tęczanka neonowa".equals(fish.getName()) && "Austalia/Oceania".equals(fish.getBiotype())) {
+                    fish.setBiotype("Australia/Oceania");
+                    fishRepository.save(fish);
+                    biotypeFixed++;
+                }
+            }
+            if (biotypeFixed > 0) {
+                logger.info("--- SKORYGOWANO BIOTYP TĘCZANKI NEONOWEJ (Austalia -> Australia) ---");
+            }
         }
 
         // Seeder roślin
@@ -215,17 +228,39 @@ public class DataSeeder implements CommandLineRunner {
             List<Plant> allPlants = plantRepository.findAll();
             int updatedCount = 0;
             for (Plant plant : allPlants) {
-                String description = plantDescriptions.get(plant.getName());
-                if (description != null && (plant.getDescription() == null || plant.getDescription().isEmpty())) {
-                    plant.setDescription(description);
-                    plantRepository.save(plant);
-                    updatedCount++;
+                String correctDescription = plantDescriptions.get(plant.getName());
+                if (correctDescription != null) {
+                    if (plant.getDescription() == null || plant.getDescription().isEmpty() ||
+                            !plant.getDescription().equals(correctDescription)) {
+                        plant.setDescription(correctDescription);
+                        plantRepository.save(plant);
+                        updatedCount++;
+                    }
                 }
             }
             if (updatedCount > 0) {
                 logger.info("--- ZAKTUALIZOWANO OPISY DLA " + updatedCount + " ROŚLIN ---");
             } else {
-                logger.info("--- WSZYSTKIE ROŚLINY MAJĄ JUŻ OPISY ---");
+                logger.info("--- WSZYSTKIE ROŚLINY MAJĄ JUŻ POPRAWNE OPISY ---");
+            }
+
+            // Korekta biotopów roślin (literówki / unifikacja) – dla istniejących rekordów
+            // Mapa: klucz "nazwa|staryBiotop", wartość = poprawny biotop. Pusta = brak korekt.
+            java.util.Map<String, String> plantBiotopeFixes = new java.util.HashMap<>();
+            // plantBiotopeFixes.put("Nazwa rośliny|Błędny biotop", "Poprawny biotop");
+
+            int biotopeFixed = 0;
+            for (Plant plant : allPlants) {
+                String key = plant.getName() + "|" + (plant.getBiotope() != null ? plant.getBiotope() : "");
+                String correctBiotope = plantBiotopeFixes.get(key);
+                if (correctBiotope != null) {
+                    plant.setBiotope(correctBiotope);
+                    plantRepository.save(plant);
+                    biotopeFixed++;
+                }
+            }
+            if (biotopeFixed > 0) {
+                logger.info("--- SKORYGOWANO BIOTOPY DLA " + biotopeFixed + " ROŚLIN ---");
             }
         }
     }
