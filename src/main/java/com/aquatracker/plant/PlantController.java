@@ -1,6 +1,7 @@
 package com.aquatracker.plant;
 
 import com.aquatracker.common.ErrorResponseDto;
+import com.aquatracker.common.PlantValidator;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -74,18 +75,24 @@ public class PlantController {
             Plant plant = new Plant();
             plant.setName(request.getName());
             plant.setSpecies(request.getSpecies() != null ? request.getSpecies() : request.getName());
-            if (request.getBiotope() != null) plant.setBiotope(request.getBiotope());
-            if (request.getTempMinC() != null) plant.setTempMinC(request.getTempMinC());
-            if (request.getTempMaxC() != null) plant.setTempMaxC(request.getTempMaxC());
-            if (request.getPhMin() != null) plant.setPhMin(request.getPhMin());
-            if (request.getPhMax() != null) plant.setPhMax(request.getPhMax());
-            if (request.getGhMin() != null) plant.setGhMin(request.getGhMin());
-            if (request.getGhMax() != null) plant.setGhMax(request.getGhMax());
-            if (request.getLightRequirements() != null) plant.setLightRequirements(request.getLightRequirements());
-            if (request.getCo2Requirements() != null) plant.setCo2Requirements(request.getCo2Requirements());
-            if (request.getDifficulty() != null) plant.setDifficulty(request.getDifficulty());
-            if (request.getDescription() != null) plant.setDescription(request.getDescription());
-            if (request.getIconName() != null) plant.setIconName(request.getIconName());
+            plant.setBiotope(request.getBiotope() != null ? request.getBiotope() : "");
+            plant.setTempMinC(request.getTempMinC() != null ? request.getTempMinC() : 20);
+            plant.setTempMaxC(request.getTempMaxC() != null ? request.getTempMaxC() : 28);
+            plant.setPhMin(request.getPhMin() != null ? request.getPhMin() : 6.0);
+            plant.setPhMax(request.getPhMax() != null ? request.getPhMax() : 8.0);
+            plant.setGhMin(request.getGhMin() != null ? request.getGhMin() : 2);
+            plant.setGhMax(request.getGhMax() != null ? request.getGhMax() : 15);
+            plant.setLightRequirements(request.getLightRequirements() != null ? request.getLightRequirements() : "umiarkowane");
+            plant.setCo2Requirements(request.getCo2Requirements() != null ? request.getCo2Requirements() : "brak");
+            plant.setDifficulty(request.getDifficulty() != null ? request.getDifficulty() : "łatwa");
+            plant.setDescription(request.getDescription() != null ? request.getDescription() : "");
+            plant.setIconName(request.getIconName() != null ? request.getIconName() : "");
+
+            java.util.List<String> validationErrors = PlantValidator.validatePlant(plant);
+            if (!validationErrors.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", validationErrors.get(0), "validationErrors", validationErrors));
+            }
 
             plant = plantRepository.save(plant);
 
@@ -143,6 +150,12 @@ public class PlantController {
                         }
                         if (request.getIconName() != null) {
                             plant.setIconName(request.getIconName());
+                        }
+
+                        java.util.List<String> validationErrors = PlantValidator.validatePlant(plant);
+                        if (!validationErrors.isEmpty()) {
+                            return ResponseEntity.badRequest()
+                                    .body(Map.of("error", validationErrors.get(0), "validationErrors", validationErrors));
                         }
 
                         plant = plantRepository.save(plant);

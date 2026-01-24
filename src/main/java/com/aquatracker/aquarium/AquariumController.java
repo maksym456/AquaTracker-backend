@@ -457,7 +457,10 @@ public class AquariumController {
 
             User user = aquarium.getOwner() != null ? aquarium.getOwner() : getOrCreateDefaultUser();
             int count = request.getCount() != null ? request.getCount() : 1;
-            
+
+            // Nie blokujemy dodawania ryb niezgodnych z akwarium – mechanizm „szoku osmotycznego”
+            // na frontendzie najpierw dodaje rybę, a potem usuwa ją przy wykryciu nieprawidłowego środowiska.
+
             // Zwraca listę, ponieważ mogą być duplikaty w bazie (przed dodaniem unique constraint)
             List<AquariumFish> existingList = aquariumFishRepository.findByAquariumIdAndFishSpeciesId(aquariumId, fishId);
             
