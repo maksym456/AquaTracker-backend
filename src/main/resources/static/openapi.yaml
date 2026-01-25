@@ -2,10 +2,10 @@ openapi: 3.0.0
 info:
   title: AquaTracker API v1
   description: |
-    AquaTracker REST API. All request/response bodies are application/json. Base URL: http://localhost:3001/api/v1/
+    AquaTracker REST API. All request/response bodies are application/json. Base URL: https://alive-tatiania-collegiumwitelona-5fb1348b.koyeb.app/
   version: 1.0.0
 servers:
-  - url: http://localhost:3001/api/v1
+  - url: https://alive-tatiania-collegiumwitelona-5fb1348b.koyeb.app/v1
     description: Local dev
 tags:
   - name: Users
@@ -1764,8 +1764,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
-  /contacts/{userId}/{contactId}:
     post:
       summary: Send invitation by email
       tags:
@@ -1804,6 +1802,9 @@ paths:
               example:
                 error: UserNotFound
                 message: Użytkownik o podanym adresie e-mail nie istnieje.
+
+
+  /contacts/{userId}/{contactId}:
     delete:
       summary: Remove friend or cancel invitation
       tags:
